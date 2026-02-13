@@ -6,7 +6,8 @@
 #
 #############################################################################
 
-import streamlit.components.v1 as components
+# import streamlit.components.v1 as components # OLD
+import streamlit as st
 
 
 def load_html_file(file_path):
@@ -31,4 +32,5 @@ def create_component(data, component_name, height=None, width=None, scrolling=Fa
             data_placeholder, safe_string(str(data[key])))
 
     # Have streamlit render the component
-    components.html(component_html, width, height, scrolling)
+    # components.html(component_html, width, height, scrolling) # OLD
+    st.html(component_html)

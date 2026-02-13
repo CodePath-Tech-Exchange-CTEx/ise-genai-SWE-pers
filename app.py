@@ -10,6 +10,20 @@ from modules import display_my_custom_component, display_post, display_genai_adv
 from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts
 
 userId = 'user1'
+data = get_genai_advice(user_id=userId)
+
+def render_genai_section(user_id):
+    """Fetches and displays the GenAI advice component."""
+    # 1. Fetch the data inside the function
+    advice_data = get_genai_advice(user_id=user_id)
+    
+    # 2. Extract values with safety defaults
+    timestamp = advice_data.get("timestamp", "No Date Known...")
+    content = advice_data.get("content", "No Content Known...")
+    image = advice_data.get("image") # modules.py will handle the None fallback
+    
+    # 3. Call the display module
+    display_genai_advice(timestamp, content, image)
 
 
 def display_app_page():
@@ -19,6 +33,9 @@ def display_app_page():
     # An example of displaying a custom component called "my_custom_component"
     value = st.text_input('Enter your name')
     display_my_custom_component(value)
+    st.divider() # Optional: adds a visual line between sections
+    st.subheader("Your Personalized Advice")
+    render_genai_section(userId)
 
 
 # This is the starting point for your app. You do not need to change these lines
