@@ -61,7 +61,13 @@ def display_genai_advice(timestamp, content, image):
         'content': content,
         'image': image
     }
+
+    # --- HEIGHT LOGIC ---
+    # Base height for image and timestamp is ~450px
+    # We add ~25px for every 100 characters of text content
+    estimated_height = 600 + (len(content) // 4)
+
     # Register and display the component by providing the data and name
     # of the HTML file. HTML must be placed inside the "custom_components" folder.
     html_file_name = "genai_advice"
-    create_component(data, html_file_name)
+    create_component(data, html_file_name, height=estimated_height)

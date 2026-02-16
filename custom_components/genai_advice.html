@@ -6,21 +6,23 @@
         align-items: center;
         border-radius: 10px;
         padding: 20px;
-        background-color: #1e1e1e; 
-        margin-top: 20px;
+        background-color: #1e1e1e;
+        /* Remove margin-top; let Streamlit handle spacing between components */
+        margin: 0;
+        box-sizing: border-box;
     }
 
     .img-container {
-        width: 100%;       
-        max-width: 600px;  
-        height: 400px;   
-        object-fit: cover; 
+        width: 100%;
+        max-width: 600px;
+        height: 400px;
+        object-fit: cover;
         margin-bottom: 15px;
     }
 </style>
 <!-- HTML -->
 <div class="flex-container">
-    <img src="{{image}}" class="img-container" alt="motivational-image"/>
+    <img src="{{image}}" class="img-container" alt="motivational-image" />
     <span>
         {{timestamp}}
     </span>
