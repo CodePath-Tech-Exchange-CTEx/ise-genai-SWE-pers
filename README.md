@@ -1,8 +1,10 @@
-# TODO: Replace with your team name
+# SWE-pers
 
-## Our Team
+* Brandon Delgado
+* Jaden Spriggs
+* Juan Gomez
+* Daniel Chukwudera
 
-TODO: Replace with your team members
 
 # Setup
 
