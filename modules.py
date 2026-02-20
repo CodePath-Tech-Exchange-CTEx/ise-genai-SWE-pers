@@ -21,7 +21,7 @@ def display_my_custom_component(value):
     # 'value' will be inserted to the templated HTML file wherever '{{NAME}}'
     # occurs. You can add as many variables as you want.
     data = {
-        'NAME': value,
+        "NAME": value,
     }
     # Register and display the component by providing the data and name
     # of the HTML file. HTML must be placed inside the "custom_components" folder.
@@ -55,12 +55,8 @@ def display_genai_advice(timestamp, content, image):
     # occurs. You can add as many variables as you want.
     if image is None or image == "No Image Known...":
         image = "https://placehold.co/600x400?text=Keep+Going!"
-        
-    data = {
-        'timestamp': timestamp,
-        'content': content,
-        'image': image
-    }
+
+    data = {"timestamp": timestamp, "content": content, "image": image}
 
     # --- HEIGHT LOGIC ---
     # Base height for image and timestamp is ~450px
