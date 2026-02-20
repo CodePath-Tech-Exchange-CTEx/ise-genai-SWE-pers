@@ -22,7 +22,7 @@ def display_my_custom_component(value):
     # 'value' will be inserted to the templated HTML file wherever '{{NAME}}'
     # occurs. You can add as many variables as you want.
     data = {
-        'NAME': value,
+        "NAME": value,
     }
     # Register and display the component by providing the data and name
     # of the HTML file. HTML must be placed inside the "custom_components" folder.
@@ -97,5 +97,25 @@ def display_recent_workouts(workouts_list):
 
 
 def display_genai_advice(timestamp, content, image):
-    """Write a good docstring here."""
-    pass
+    """Displays a 'my custom component' which showcases an example of how custom
+    components work.
+
+    value: the name you'd like to be called by within the app
+    """
+    # Define any templated data from your HTML file. The contents of
+    # 'value' will be inserted to the templated HTML file wherever '{{NAME}}'
+    # occurs. You can add as many variables as you want.
+    if image is None or image == "No Image Known...":
+        image = "https://placehold.co/600x400?text=Keep+Going!"
+
+    data = {"timestamp": timestamp, "content": content, "image": image}
+
+    # --- HEIGHT LOGIC ---
+    # Base height for image and timestamp is ~450px
+    # We add ~25px for every 100 characters of text content
+    estimated_height = 600 + (len(content) // 4)
+
+    # Register and display the component by providing the data and name
+    # of the HTML file. HTML must be placed inside the "custom_components" folder.
+    html_file_name = "genai_advice"
+    create_component(data, html_file_name, height=estimated_height)
