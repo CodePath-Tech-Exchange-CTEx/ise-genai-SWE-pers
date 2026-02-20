@@ -8,6 +8,7 @@
 #############################################################################
 
 from internals import create_component
+import streamlit as st
 
 
 # This one has been written for you as an example. You may change it as wanted.
@@ -40,8 +41,59 @@ def display_activity_summary(workouts_list):
 
 
 def display_recent_workouts(workouts_list):
-    """Write a good docstring here."""
-    pass
+    """Function takes in a list of user workouts and displays the full workout information
+       params: A list of user_workout info
+       returns: None
+    """
+
+    #Take in the workout list and diaply just the workout names
+    if "view_option" not in st.session_state:
+        st.session_state.view_option = "View More"
+
+    if "workout_option_index" not in st.session_state:
+        st.session_state.workout_option_index = 0
+
+    if "show_area" not in st.session_state:
+        st.session_state.show_area = False
+
+
+    if workouts_list:
+
+        workout_options =  ["select an option"] + [workout["workout_id"] for workout in workouts_list]
+
+        workout_id = st.selectbox("Select a Workout", options = workout_options, key="selected_workout_id")
+
+        st.session_state.workout_option_index = 0 if workout_id not in workout_options else workout_options.index(workout_id)
+        
+
+        def handle_view_option():
+            if "view_option" in st.session_state:
+                if  st.session_state.view_option != "View Less":
+                    st.session_state.view_option = "View Less"
+                    st.session_state.show_area = True
+                    
+                else:
+                    st.session_state.view_option = "View More"
+                    st.session_state.show_area = False
+
+        view_option = st.button(f"{st.session_state.view_option}", on_click=handle_view_option)
+        
+        if st.session_state.show_area:
+            if workout_id == "select an option":
+                st.warning("Please select a workout from the dropdown first.")
+            
+            else:
+                text = ""
+                for key, val in workouts_list[st.session_state.workout_option_index-1].items():
+                    text += key + ": " + str(val) + "\n"
+
+                st.text_area(label= "Text" ,value = text,label_visibility="hidden")
+
+    else:
+        st.subheader(":red[You Have No Workouts]")
+    
+
+    
 
 
 def display_genai_advice(timestamp, content, image):
