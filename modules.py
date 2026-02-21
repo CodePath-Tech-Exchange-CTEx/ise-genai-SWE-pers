@@ -32,6 +32,29 @@ def display_my_custom_component(value):
 
 def display_post(username, user_image, timestamp, content, post_image):
     """Write a good docstring here."""
+    col1, col2 = st.columns([1,9])
+    with col1:
+        st.image(user_image, width=50)
+    with col2:
+        st.text(username)
+    st.image(post_image, width=700)
+    st.markdown(
+    f"""
+    <div style="
+        text-align: right;
+        width: 100%;
+        font-size: 12px;
+        color: #888;
+        margin-top: 4px;
+    ">
+        {timestamp}
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+    st.text(username + ":  " + content)
+    
+    
     pass
 
 

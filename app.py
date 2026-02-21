@@ -7,7 +7,7 @@
 
 import streamlit as st
 from modules import display_my_custom_component, display_post, display_genai_advice, display_activity_summary, display_recent_workouts
-from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts
+from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts, get_post
 
 userId = 'user1'
 data = get_genai_advice(user_id=userId)
@@ -36,7 +36,8 @@ def display_app_page():
     st.divider() # Optional: adds a visual line between sections
     st.subheader("Your Personalized Advice")
     render_genai_section(userId)
-
+    post_data = get_post('user5')
+    
     
     if "user_workouts" not in st.session_state:
         st.session_state.user_workouts = get_user_workouts("random_user_id")
@@ -45,6 +46,8 @@ def display_app_page():
     # display_recent_workouts([])
     # display_recent_workouts(None)
 
+    # displays a post with dummy data
+    display_post(post_data['username'], post_data['user_image'], post_data['timestamp'], post_data['content'], post_data['post_image'])
 # This is the starting point for your app. You do not need to change these lines
 if __name__ == '__main__':
     display_app_page()
