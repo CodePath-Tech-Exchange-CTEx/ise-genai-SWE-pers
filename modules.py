@@ -68,54 +68,49 @@ def display_recent_workouts(workouts_list):
        params: A list of user_workout info
        returns: None
     """
+    
+    import streamlit as st
 
-    #Take in the workout list and diaply just the workout names
-    if "view_option" not in st.session_state:
-        st.session_state.view_option = "View More"
-
-    if "workout_option_index" not in st.session_state:
-        st.session_state.workout_option_index = 0
-
+def display_recent_workouts(workouts_list):
+    # 1. Initialize visibility state
     if "show_area" not in st.session_state:
         st.session_state.show_area = False
 
-
-    if workouts_list:
-
-        workout_options =  ["select an option"] + [workout["workout_id"] for workout in workouts_list]
-
-        workout_id = st.selectbox("Select a Workout", options = workout_options, key="selected_workout_id")
-
-        st.session_state.workout_option_index = 0 if workout_id not in workout_options else workout_options.index(workout_id)
-        
-
-        def handle_view_option():
-            if "view_option" in st.session_state:
-                if  st.session_state.view_option != "View Less":
-                    st.session_state.view_option = "View Less"
-                    st.session_state.show_area = True
-                    
-                else:
-                    st.session_state.view_option = "View More"
-                    st.session_state.show_area = False
-
-        view_option = st.button(f"{st.session_state.view_option}", on_click=handle_view_option)
-        
-        if st.session_state.show_area:
-            if workout_id == "select an option":
-                st.warning("Please select a workout from the dropdown first.")
-            
-            else:
-                text = ""
-                for key, val in workouts_list[st.session_state.workout_option_index-1].items():
-                    text += key + ": " + str(val) + "\n"
-
-                st.text_area(label= "Text" ,value = text,label_visibility="hidden")
-
-    else:
+    if not workouts_list:
         st.subheader(":red[You Have No Workouts]")
-    
+        return
 
+    # The Selection 
+    workout_ids = ["select an option"] + [w["workout_id"] for w in workouts_list]
+    selected_id = st.selectbox("Select a Workout", options=workout_ids, key="selected_workout_id")
+
+    #oggle Button
+    def handle_view_option_click():
+        st.session_state.show_area = not st.session_state.show_area
+
+    view_option = st.button("View More" if not st.session_state.show_area else "View Less", key="view_option_button",on_click=handle_view_option_click)
+        
+
+    # Immediate Render Logic
+    if st.session_state.show_area:
+        # Find the workout object immediately based on the selectbox's current value
+        workout = next((w for w in workouts_list if w["workout_id"] == selected_id), None)
+        
+        if workout:
+           
+            workout_info = (
+                f"ID: {workout['workout_id']}\n"
+                f"Start: {workout['start_timestamp']}\n"
+                f"End: {workout['end_timestamp']}\n"
+                f"Dist: {workout['distance']} km\n"
+                f"Steps: {workout['steps']}\n"
+                f"Calories: {workout['calories_burned']}"
+            )
+            
+            st.text_area("Workout Details", value=workout_info, height=200, disabled=True,key="workout_text_area")
+    
+        else:
+           st.warning("Please select a workout from the dropdown first.") 
     
 
 

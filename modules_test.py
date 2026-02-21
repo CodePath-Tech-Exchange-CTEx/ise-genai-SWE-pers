@@ -60,9 +60,31 @@ class TestDisplayGenAiAdvice(unittest.TestCase):
 class TestDisplayRecentWorkouts(unittest.TestCase):
     """Tests the display_recent_workouts function."""
 
-    def test_foo(self):
-        """Tests foo."""
-        pass
+    def test_recent_workout_select_workout(self):
+        at = AppTest.from_file("app.py")
+        at.run()
+
+        # Test for the first workout
+        at.selectbox(key="selected_workout_id").set_value("workout0")
+        at.button(key="view_option_button").click()
+        at.run()
+
+        text_area = at.text_area(key="workout_text_area")
+        assert "workout0" in text_area.value
+
+    def test_recent_workout_select_an_option(self):
+        at = AppTest.from_file("app.py")
+        at.run()
+
+        #Test for "select an option"
+   
+        at.selectbox(key="selected_workout_id").set_value("select an option")
+        at.button(key="view_option_button").click()
+        at.run()
+
+        warnings = at.warning
+        assert len(warnings) > 0
+        assert "Please select a workout" in warnings[0].value
 
 
 if __name__ == "__main__":
