@@ -8,8 +8,18 @@
 # testing earlier units.
 #############################################################################
 
+
 import random
 
+posts = {
+    'user5' : {
+        'username': 'NateWorksOutaLot',
+        'user_image' : 'https://i.etsystatic.com/22467704/r/il/e9acd2/2660697461/il_300x300.2660697461_h7db.jpg',
+        'timestamp' : '2025-05-04 07:30:00',
+        'content' : "Me and the boys went hiking for 2 hours up Mount Fuji the other day.\nIt was great!",
+        'post_image' : 'https://media.istockphoto.com/id/1949006055/photo/group-of-active-hikers-walks-uphill-in-mountains.jpg?s=612x612&w=0&k=20&c=fS4V-GX6bYIKfWA6EgAt6r1osLy-YvlaAgV7wgVA2Pc=',
+    }
+}
 users = {
     'user1': {
         'full_name': 'Remi',
@@ -105,6 +115,9 @@ def get_user_profile(user_id):
         raise ValueError(f'User {user_id} not found.')
     return users[user_id]
 
+def get_post(user_id):
+    """returns post data for app"""
+    return posts[user_id]
 
 def get_user_posts(user_id):
     """Returns a list of a user's posts.

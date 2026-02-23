@@ -71,7 +71,7 @@ Run the following commands.
 git add .
 ```
 
-``shell
+``` shell
 git commit -m "Set up GitHub Actions."
 ```
 
