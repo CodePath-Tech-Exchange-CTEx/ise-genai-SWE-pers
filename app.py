@@ -46,6 +46,15 @@ def display_app_page():
     # display_recent_workouts([])
     # display_recent_workouts(None)
 
+    # ---- Activity Summary ---- #
+    workouts_list = get_user_workouts(userId)
+
+    # Shows how many workouts were loaded
+    st.caption(f"Loaded workouts: {len(workouts_list) if workouts_list else 0}")
+
+    display_activity_summary(workouts_list)
+
+
     # displays a post with dummy data
     display_post(post_data['username'], post_data['user_image'], post_data['timestamp'], post_data['content'], post_data['post_image'])
 # This is the starting point for your app. You do not need to change these lines

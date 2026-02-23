@@ -1,0 +1,99 @@
+<!-- CSS -->
+<style>
+  /* Main container */
+  .custom-component-container {
+    border: 2px solid black;
+    padding: 16px;
+    font-family: Arial, sans-serif;
+  }
+
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  .card-value {
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  th {
+    background-color: #f5f5f5;
+  }
+</style>
+
+<!-- HTML -->
+<div class="custom-component-container">
+  <h2>Activity Summary</h2>
+
+  <div class="summary-cards">
+    <div class="card">
+      <div class="card-title">Total Workouts</div>
+      <div class="card-value">{{TOTAL_WORKOUTS}}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Total Distance</div>
+      <div class="card-value">{{TOTAL_DISTANCE}}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Total Steps</div>
+      <div class="card-value">{{TOTAL_STEPS}}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Total Calories</div>
+      <div class="card-value">{{TOTAL_CALORIES}}</div>
+    </div>
+  </div>
+
+  <h3>Workouts</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Start</th>
+        <th>End</th>
+        <th>Distance</th>
+        <th>Steps</th>
+        <th>Calories</th>
+        <th>Start Coordinates</th>
+        <th>End Coordinates</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{WORKOUT_ROWS}}
+    </tbody>
+  </table>
+</div>
+
+<!-- JavaScript -->
+<script>
+</script>
