@@ -18,7 +18,7 @@ import random
 PROJECT_ID = "juan-gomez-fiu"
 LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
-gen_model = GenerativeModel("gemini-1.5-flash")
+gen_model = GenerativeModel("gemini-2.0-flash-001")
 
 posts = {
     "user5": {
@@ -225,3 +225,17 @@ Respond with ONLY the advice text, no extra formatting."""
         "content": advice_content,
         "image": image,
     }
+
+##############################
+# SAMPLE BIGQUERY QUERY
+##############################
+
+# from google.cloud import bigquery
+
+# client = bigquery.Client(project="juan-gomez-fiu")
+
+# query = "SELECT * FROM `juan-gomez-fiu.SWEpers.Workouts`"
+# results = client.query(query).result()
+
+# for row in results:
+#     print(dict(row))
