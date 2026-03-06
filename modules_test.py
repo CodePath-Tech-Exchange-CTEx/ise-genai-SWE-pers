@@ -21,9 +21,16 @@ from modules import (
 class TestDisplayPost(unittest.TestCase):
     """Tests the display_post function."""
 
-    def test_foo(self):
-        """Tests foo."""
-        pass
+    def test_diplay_post_returns_none(self):
+        """Tests that display_post executes and returns None."""
+        result = display_post(
+            username="test_user",
+            user_image="https://thumbs.dreamstime.com/b/test-word-25488843.jpg?w=992",
+            timestamp="2024-01-01 00:00:00",
+            content="Test content",
+            post_image="https://thumbs.dreamstime.com/b/test-word-25488843.jpg?w=992",
+        )
+        self.assertIsNone(result)
 
 
 class TestDisplayActivitySummary(unittest.TestCase):
