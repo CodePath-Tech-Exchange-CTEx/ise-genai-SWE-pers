@@ -10,6 +10,7 @@
 
 from datetime import datetime
 
+from google.cloud import bigquery
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import random
@@ -19,6 +20,9 @@ PROJECT_ID = "juan-gomez-fiu"
 LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 gen_model = GenerativeModel("gemini-1.5-flash")
+
+# ---- Database setup ---- #
+bq_client = bigquery.Client(project=PROJECT_ID)
 
 posts = {
     "user5": {
@@ -88,32 +92,37 @@ def get_user_sensor_data(user_id, workout_id):
 
 
 def get_user_workouts(user_id):
-    """Returns a list of user's workouts.
-
-    This function currently returns random data. You will re-write it in Unit 3.
+    """Returns a list of user's workouts. Some data in a workout may not be populated.
+    
+    Input: user_id
+    Output: A list of workouts mapped from the database.
     """
     workouts = []
-    for index in range(random.randint(1, 3)):
-        random_lat_lng_1 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        random_lat_lng_2 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        workouts.append(
-            {
-                "workout_id": f"workout{index}",
-                "start_timestamp": "2024-01-01 00:00:00",
-                "end_timestamp": "2024-01-01 00:30:00",
-                "start_lat_lng": random_lat_lng_1,
-                "end_lat_lng": random_lat_lng_2,
-                "distance": random.randint(0, 200) / 10.0,
-                "steps": random.randint(0, 20000),
-                "calories_burned": random.randint(0, 100),
-            }
-        )
+    
+    # Note: Replace 'your_dataset' with your actual BigQuery dataset name.
+    query = f"SELECT * FROM `{PROJECT_ID}.SWEpers.workouts` WHERE user_id = @user_id"
+    
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+    
+    query_job = bq_client.query(query, job_config=job_config)
+    
+    for row in query_job.result():
+        row_dict = dict(row.items())
+        workouts.append({
+            "workout_id": row_dict.get("workout_id"),
+            "start_timestamp": str(row_dict.get("start_timestamp")) if row_dict.get("start_timestamp") else None,
+            "end_timestamp": str(row_dict.get("end_timestamp")) if row_dict.get("end_timestamp") else None,
+            "start_lat_lng": row_dict.get("start_lat_lng"),
+            "end_lat_lng": row_dict.get("end_lat_lng"),
+            "distance": row_dict.get("distance"),
+            "steps": row_dict.get("steps"),
+            "calories_burned": row_dict.get("calories_burned"),
+        })
+        
     return workouts
 
 
