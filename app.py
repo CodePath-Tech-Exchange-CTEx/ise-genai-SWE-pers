@@ -36,7 +36,7 @@ def display_app_page():
     st.divider() # Optional: adds a visual line between sections
     st.subheader("Your Personalized Advice")
     render_genai_section(userId)
-    post_data = get_post('user5')
+    post_data = get_post(userId)
     
     
     if "user_workouts" not in st.session_state:

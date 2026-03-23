@@ -51,12 +51,8 @@ def display_post(username, user_image, timestamp, content, post_image):
     </div>
     """,
     unsafe_allow_html=True
-)
+    )
     st.text(username + ":  " + content)
-    
-    
-    pass
-
 
 def display_activity_summary(workouts_list):
     """Displays an activity summary section for a list of workouts.
