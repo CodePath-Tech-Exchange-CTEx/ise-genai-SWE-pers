@@ -133,30 +133,20 @@ def get_user_workouts(user_id):
 
 
 def get_user_profile(user_id):
-    """Returns information about the given user.
-
-    This function currently returns random data. You will re-write it in Unit 3.
-    """
-    if user_id not in users:
-        raise ValueError(f"User {user_id} not found.")
-    return users[user_id]
-
-
-def get_post(user_id):
-    """Fetches user info from BigQuery Users table and builds a post dict."""
-
+    """Returns information about the given user."""
+    
     client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
-        SELECT UserId, Username, ImageUrl
+        SELECT UserId, Name, Username, ImageUrl, DateOfBirth
         FROM `juan-gomez-fiu.SWEpers.Users`
-        WHERE UserId = @UserId
+        WHERE UserId = @user_id
         LIMIT 1
     """
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ScalarQueryParameter("UserId", "STRING", user_id)
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
 
@@ -170,45 +160,101 @@ def get_post(user_id):
     if row is None:
         raise ValueError(f"User {user_id} not found in Users table.")
 
-    content = random.choice(
-        [
-            "Had a great workout today!",
-            "The AI really motivated me to push myself further, I ran 10 miles!",
-            "Me and the boys went hiking for 2 hours up Mount Fuji the other day.\nIt was great!"
+    return {
+        "name": row["Name"],
+        "username": row["Username"],
+        "user_image": row["ImageUrl"],
+        "date_of_birth": str(row["DateOfBirth"]),  # safer for Streamlit display
+    }
+
+
+def get_post(user_id):
+    """Returns the most recent post for a user."""
+    client = bigquery.Client(project="juan-gomez-fiu")
+
+    query = """
+        SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
+        FROM `juan-gomez-fiu.SWEpers.Posts`
+        WHERE AuthorId = @user_id
+        ORDER BY Timestamp DESC
+        LIMIT 1
+    """
+    query2 = """
+        SELECT Username, ImageUrl
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @user_id
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
 
+    results = client.query(query, job_config=job_config).result()
+    results2 = client.query(query2, job_config=job_config).result()
+
+    row = next(results, None)
+    row2 = next(results2, None)
+    if row is None:
+        raise ValueError(f"No posts found for user {user_id}.")
+
     return {
-        "user_id": row["UserId"],
-        "username": row["Username"],
-        "user_image": "https://i.etsystatic.com/22467704/r/il/e9acd2/2660697461/il_300x300.2660697461_h7db.jpg",
-        "timestamp": "2026-03-22 12:00:00",   # hardcoded
-        "content": content,  # hardcoded
-        "post_image": row["ImageUrl"],  
+        "username": row2["Username"],
+        "user_image": row2["ImageUrl"],
+        "timestamp": row["Timestamp"],
+        "content": row["Content"],
+        "image_url": row["ImageUrl"],
     }
 
 def get_user_posts(user_id):
-    """Returns a list of a user's posts.
+    """Returns a list of a user's posts."""
+    client = bigquery.Client(project="juan-gomez-fiu")
 
-    This function currently returns random data. You will re-write it in Unit 3.
+    query = """
+        SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
+        FROM `juan-gomez-fiu.SWEpers.Posts`
+        WHERE AuthorId = @user_id
+        ORDER BY Timestamp DESC
+        LIMIT 3
     """
-    content = random.choice(
-        [
-            "Had a great workout today!",
-            "The AI really motivated me to push myself further, I ran 10 miles!",
+
+    query2 = """
+        SELECT Username, ImageUrl
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @user_id
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
-    return [
-        {
-            "user_id": user_id,
-            "post_id": "post1",
-            "timestamp": "2024-01-01 00:00:00",
-            "content": content,
-            "image": "image_url",
-        }
-    ]
 
+    results = client.query(query, job_config=job_config).result()
+    results2 = client.query(query2, job_config=job_config).result()
 
+    row2 = next(results2, None)
+    if row2 is None:
+        raise ValueError(f"User {user_id} not found in Users table.")
+
+    posts = []
+    for row in results:
+        posts.append({
+            "username": row2["Username"],
+            "user_image": row2["ImageUrl"],
+            "timestamp": row["Timestamp"],
+            "content": row["Content"],
+            "image_url": row["ImageUrl"],
+        })
+
+    if not posts:
+        raise ValueError(f"No posts found for user {user_id}.")
+
+    return posts
+    
 def get_genai_advice(user_id):
     """Returns the most recent advice from the GenAI model based on user data.
 
