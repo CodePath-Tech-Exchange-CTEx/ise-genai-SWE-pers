@@ -34,10 +34,11 @@ def display_post(username, user_image, timestamp, content, post_image=None):
     """Write a good docstring here."""
     col1, col2 = st.columns([1,9])
     with col1:
-        st.image(user_image, width=50)
+        if user_image and user_image != "None":
+            st.image(user_image, width=50)
     with col2:
         st.text(username)
-    if post_image:
+    if post_image and post_image != "None":
         st.image(post_image, width=700)
     st.markdown(
     f"""
