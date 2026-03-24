@@ -36,7 +36,7 @@ def display_app_page():
     st.divider() # Optional: adds a visual line between sections
     st.subheader("Your Personalized Advice")
     render_genai_section(userId)
-    post_data = get_post('user5')
+    post_data = get_post(userId)
     
     
     if "user_workouts" not in st.session_state:
@@ -56,7 +56,7 @@ def display_app_page():
 
 
     # displays a post with dummy data
-    display_post(post_data['username'], post_data['user_image'], post_data['timestamp'], post_data['content'], post_data['post_image'])
+    display_post(post_data['username'], post_data['user_image'], post_data['timestamp'], post_data['content'], post_data['image_url'])
 # This is the starting point for your app. You do not need to change these lines
 if __name__ == '__main__':
     display_app_page()

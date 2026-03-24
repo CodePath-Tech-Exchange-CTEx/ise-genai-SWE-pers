@@ -9,7 +9,7 @@
 #############################################################################
 
 from datetime import datetime
-
+from google.cloud import bigquery
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import random
@@ -123,42 +123,128 @@ def get_user_workouts(user_id):
 
 
 def get_user_profile(user_id):
-    """Returns information about the given user.
+    """Returns information about the given user."""
+    
+    client = bigquery.Client(project="juan-gomez-fiu")
 
-    This function currently returns random data. You will re-write it in Unit 3.
+    query = """
+        SELECT UserId, Name, Username, ImageUrl, DateOfBirth
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @user_id
+        LIMIT 1
     """
-    if user_id not in users:
-        raise ValueError(f"User {user_id} not found.")
-    return users[user_id]
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+
+    results = client.query(query, job_config=job_config).result()
+
+    row = None
+    for r in results:
+        row = r
+        break
+
+    if row is None:
+        raise ValueError(f"User {user_id} not found in Users table.")
+
+    return {
+        "name": row["Name"],
+        "username": row["Username"],
+        "user_image": row["ImageUrl"],
+        "date_of_birth": str(row["DateOfBirth"]),  # safer for Streamlit display
+    }
 
 
 def get_post(user_id):
-    """returns post data for app"""
-    return posts[user_id]
+    """Returns the most recent post for a user."""
+    client = bigquery.Client(project="juan-gomez-fiu")
 
-
-def get_user_posts(user_id):
-    """Returns a list of a user's posts.
-
-    This function currently returns random data. You will re-write it in Unit 3.
+    query = """
+        SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
+        FROM `juan-gomez-fiu.SWEpers.Posts`
+        WHERE AuthorId = @user_id
+        ORDER BY Timestamp DESC
+        LIMIT 1
     """
-    content = random.choice(
-        [
-            "Had a great workout today!",
-            "The AI really motivated me to push myself further, I ran 10 miles!",
+    query2 = """
+        SELECT Username, ImageUrl
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @user_id
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
-    return [
-        {
-            "user_id": user_id,
-            "post_id": "post1",
-            "timestamp": "2024-01-01 00:00:00",
-            "content": content,
-            "image": "image_url",
-        }
-    ]
 
+    results = client.query(query, job_config=job_config).result()
+    results2 = client.query(query2, job_config=job_config).result()
 
+    row = next(results, None)
+    row2 = next(results2, None)
+    if row is None:
+        raise ValueError(f"No posts found for user {user_id}.")
+
+    return {
+        "username": row2["Username"],
+        "user_image": row2["ImageUrl"],
+        "timestamp": row["Timestamp"],
+        "content": row["Content"],
+        "image_url": row["ImageUrl"],
+    }
+
+def get_user_posts(user_id):
+    """Returns a list of a user's posts."""
+    client = bigquery.Client(project="juan-gomez-fiu")
+
+    query = """
+        SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
+        FROM `juan-gomez-fiu.SWEpers.Posts`
+        WHERE AuthorId = @user_id
+        ORDER BY Timestamp DESC
+        LIMIT 3
+    """
+
+    query2 = """
+        SELECT Username, ImageUrl
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @user_id
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+
+    results = client.query(query, job_config=job_config).result()
+    results2 = client.query(query2, job_config=job_config).result()
+
+    row2 = next(results2, None)
+    if row2 is None:
+        raise ValueError(f"User {user_id} not found in Users table.")
+
+    posts = []
+    for row in results:
+        posts.append({
+            "username": row2["Username"],
+            "user_image": row2["ImageUrl"],
+            "timestamp": row["Timestamp"],
+            "content": row["Content"],
+            "image_url": row["ImageUrl"],
+        })
+
+    if not posts:
+        raise ValueError(f"No posts found for user {user_id}.")
+
+    return posts
+    
 def get_genai_advice(user_id):
     """Returns the most recent advice from the GenAI model based on user data.
 
