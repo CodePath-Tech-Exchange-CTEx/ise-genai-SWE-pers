@@ -1,3 +1,4 @@
 streamlit
 google-cloud-bigquery
 google-cloud-aiplatform
+python-dotenv
