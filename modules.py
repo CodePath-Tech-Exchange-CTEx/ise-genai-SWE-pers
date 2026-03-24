@@ -30,14 +30,15 @@ def display_my_custom_component(value):
     create_component(data, html_file_name)
 
 
-def display_post(username, user_image, timestamp, content, image_url):
+def display_post(username, user_image, timestamp, content, post_image=None):
     """Write a good docstring here."""
     col1, col2 = st.columns([1,9])
     with col1:
         st.image(user_image, width=50)
     with col2:
         st.text(username)
-    st.image(image_url, width=700)
+    if post_image:
+        st.image(post_image, width=700)
     st.markdown(
     f"""
     <div style="
@@ -143,10 +144,6 @@ def display_recent_workouts(workouts_list):
        params: A list of user_workout info
        returns: None
     """
-    
-    import streamlit as st
-
-def display_recent_workouts(workouts_list):
     # 1. Initialize visibility state
     if "show_area" not in st.session_state:
         st.session_state.show_area = False
