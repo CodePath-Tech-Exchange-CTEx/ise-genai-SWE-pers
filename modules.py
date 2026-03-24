@@ -52,12 +52,8 @@ def display_post(username, user_image, timestamp, content, post_image=None):
     </div>
     """,
     unsafe_allow_html=True
-)
+    )
     st.text(username + ":  " + content)
-    
-    
-    pass
-
 
 def display_activity_summary(workouts_list):
     """Displays an activity summary section for a list of workouts.
@@ -148,10 +144,6 @@ def display_recent_workouts(workouts_list):
        params: A list of user_workout info
        returns: None
     """
-    
-    import streamlit as st
-
-def display_recent_workouts(workouts_list):
     # 1. Initialize visibility state
     if "show_area" not in st.session_state:
         st.session_state.show_area = False
