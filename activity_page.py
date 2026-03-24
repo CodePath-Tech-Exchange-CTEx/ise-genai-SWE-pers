@@ -66,9 +66,11 @@ def get_exercise_image(post_text):
     
     return None
 
+from google.cloud import bigquery
+
 def add_post(author_id, content, image_url):
-    #Line written by GEMINI
-    query = f"""
+    #Lines written by CHATGPT
+    query = """
     INSERT INTO `juan-gomez-fiu`.SWEpers.Posts 
     (PostId, AuthorId, Timestamp, ImageUrl, Content)
     
@@ -77,15 +79,26 @@ def add_post(author_id, content, image_url):
         'post', 
         CAST(IFNULL(MAX(CAST(SUBSTR(PostId, 5) AS INT64)), 0) + 1 AS STRING)
       ),
-      '{author_id}',
+      @author_id,
       CURRENT_DATETIME(),
-      '{image_url}',
-      '{content}'
-      
+      @image_url,
+      @content
     FROM `juan-gomez-fiu`.SWEpers.Posts
     """
-    
-    client.query(query).result()
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("author_id", "STRING", author_id),
+            bigquery.ScalarQueryParameter("image_url", "STRING", image_url or ""),
+            bigquery.ScalarQueryParameter("content", "STRING", content),
+        ]
+    )
+
+    try:
+        client.query(query, job_config=job_config).result()
+    except Exception as e:
+        print("BIGQUERY ERROR:", e)
+        raise e
 
 
 st.header("Activity Page")
@@ -120,7 +133,7 @@ if st.session_state.current_user:
         start_str = st.session_state.current_workout['StartTimestamp'].strftime("%b %d, %H:%M")
         end_str = st.session_state.current_workout['EndTimestamp'].strftime("%H:%M")
         
-        #Line written by GEMINI
+        #Lines written by GEMINI
         details = f"""
         🆔 Workout ID: {st.session_state.current_workout['WorkoutId']}
         📅 Time: {start_str} to {end_str}
@@ -130,8 +143,10 @@ if st.session_state.current_user:
         🔥 Calories: {st.session_state.current_workout['CaloriesBurned']} kcal
         📍 Start: ({st.session_state.current_workout['StartLocationLat']}, {st.session_state.current_workout['StartLocationLong']})
         """
+        st.session_state.current_workout_text = details
 
-        # Then display it
+
+        
         st.text_area("Workout Details", value=details, height=200)
       
     # st.text_area("User Workouts",f"{"\n".join([row["WorkoutId"] for row in st.session_state.current_user_workouts])}")
@@ -140,29 +155,23 @@ else:
     st.error("Select a User To View Workouts")
 
 
-st.divider()
-if "show_post_form" not in st.session_state:
-    st.session_state.show_post_form = False
 
-# 2. Clicking this button toggles the state permanently
-make_post = st.button("Make a Post")
-if make_post:
-    st.session_state.show_post_form = True
+workout_content = st.session_state.get('current_workout_text', '')
 
+if workout_content:
+    st.divider()
+    st.subheader("Share your Results")
+    
+    if st.button("Post Workout to Feed"):
+        if not st.session_state.current_user:
+            st.error("Please select a user profile first.")
+        else:
+            image_url = get_exercise_image(workout_content)
+            add_post(st.session_state.current_user, workout_content, image_url)
 
-if st.session_state.show_post_form:
-    if not st.session_state.current_user:
-        st.error("Select a User To Make a Post")
-    else:
-        post_text = st.text_input("Enter Your Post Content")
-        submit_button = st.button("Submit Post")
+            st.session_state.post_success = True  
+            st.rerun()
 
-        if submit_button:
-            if post_text: 
-                image_url = get_exercise_image(post_text)
-                print(image_url)
-                add_post(st.session_state.current_user, post_text, image_url)            
-                st.session_state.show_post_form = False
-                st.rerun() 
-            else:
-                st.warning("Post content cannot be empty.")
+if st.session_state.get("post_success"):
+    st.success("Successfully posted your workout!")
+    st.session_state.post_success = False
