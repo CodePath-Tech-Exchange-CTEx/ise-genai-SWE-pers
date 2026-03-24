@@ -93,32 +93,47 @@ WHERE
    
 
 def get_user_workouts(user_id):
-    """Returns a list of user's workouts.
-
-    This function currently returns random data. You will re-write it in Unit 3.
+    """Returns a list of user's workouts. Some data in a workout may not be populated.
+    
+    Input: user_id
+    Output: A list of workouts mapped from the database.
     """
     workouts = []
-    for index in range(random.randint(1, 3)):
-        random_lat_lng_1 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        random_lat_lng_2 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        workouts.append(
-            {
-                "workout_id": f"workout{index}",
-                "start_timestamp": "2024-01-01 00:00:00",
-                "end_timestamp": "2024-01-01 00:30:00",
-                "start_lat_lng": random_lat_lng_1,
-                "end_lat_lng": random_lat_lng_2,
-                "distance": random.randint(0, 200) / 10.0,
-                "steps": random.randint(0, 20000),
-                "calories_burned": random.randint(0, 100),
-            }
-        )
+    
+    # Note: Replace 'your_dataset' with your actual BigQuery dataset name.
+    query = f"SELECT * FROM `{PROJECT_ID}.SWEpers.Workouts` WHERE UserId = @user_id"
+    
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+    
+    bq_client = bigquery.Client(project=PROJECT_ID)
+    query_job = bq_client.query(query, job_config=job_config)
+    
+    for row in query_job.result():
+        row_dict = dict(row.items())
+        
+        start_lat = row_dict.get("StartLocationLat")
+        start_lng = row_dict.get("StartLocationLong")
+        start_lat_lng = (start_lat, start_lng) if start_lat is not None and start_lng is not None else None
+        
+        end_lat = row_dict.get("EndLocationLat")
+        end_lng = row_dict.get("EndLocationLong")
+        end_lat_lng = (end_lat, end_lng) if end_lat is not None and end_lng is not None else None
+
+        workouts.append({
+            "workout_id": row_dict.get("WorkoutId"),
+            "start_timestamp": str(row_dict.get("StartTimestamp")) if row_dict.get("StartTimestamp") else None,
+            "end_timestamp": str(row_dict.get("EndTimestamp")) if row_dict.get("EndTimestamp") else None,
+            "start_lat_lng": start_lat_lng,
+            "end_lat_lng": end_lat_lng,
+            "distance": row_dict.get("TotalDistance"),
+            "steps": row_dict.get("TotalSteps"),
+            "calories_burned": row_dict.get("CaloriesBurned"),
+        })
+        
     return workouts
 
 
