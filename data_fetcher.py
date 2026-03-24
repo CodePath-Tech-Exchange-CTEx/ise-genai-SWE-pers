@@ -20,9 +20,6 @@ LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 gen_model = GenerativeModel("gemini-2.0-flash-001")
 
-# ---- Database setup ---- #
-bq_client = bigquery.Client(project=PROJECT_ID)
-
 posts = {
     "user5": {
         "username": "NateWorksOutaLot",
@@ -107,6 +104,7 @@ def get_user_workouts(user_id):
         ]
     )
     
+    bq_client = bigquery.Client(project=PROJECT_ID)
     query_job = bq_client.query(query, job_config=job_config)
     
     for row in query_job.result():

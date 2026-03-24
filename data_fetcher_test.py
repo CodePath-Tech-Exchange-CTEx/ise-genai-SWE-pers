@@ -13,9 +13,11 @@ from datetime import datetime
 
 class TestDataFetcher(unittest.TestCase):
 
-    @patch("data_fetcher.bq_client.query")
-    def test_get_user_workouts_success(self, mock_query):
+    @patch("data_fetcher.bigquery.Client")
+    def test_get_user_workouts_success(self, MockClient):
         """Tests that get_user_workouts correctly maps BigQuery results to a list of dicts."""
+        mock_client_instance = MockClient.return_value
+        mock_query = mock_client_instance.query
         mock_job = MagicMock()
         mock_row1 = MagicMock()
         mock_row1.items.return_value = [
@@ -47,9 +49,11 @@ class TestDataFetcher(unittest.TestCase):
         self.assertEqual(workout["calories_burned"], 400)
         mock_query.assert_called_once()
 
-    @patch("data_fetcher.bq_client.query")
-    def test_get_user_workouts_empty(self, mock_query):
+    @patch("data_fetcher.bigquery.Client")
+    def test_get_user_workouts_empty(self, MockClient):
         """Tests that get_user_workouts returns an empty list when no records match."""
+        mock_client_instance = MockClient.return_value
+        mock_query = mock_client_instance.query
         mock_job = MagicMock()
         mock_job.result.return_value = []
         mock_query.return_value = mock_job
@@ -58,9 +62,11 @@ class TestDataFetcher(unittest.TestCase):
         self.assertEqual(workouts, [])
         mock_query.assert_called_once()
 
-    @patch("data_fetcher.bq_client.query")
-    def test_get_user_workouts_missing_fields(self, mock_query):
+    @patch("data_fetcher.bigquery.Client")
+    def test_get_user_workouts_missing_fields(self, MockClient):
         """Tests that get_user_workouts gracefully handles missing optional fields."""
+        mock_client_instance = MockClient.return_value
+        mock_query = mock_client_instance.query
         mock_job = MagicMock()
         mock_row1 = MagicMock()
         mock_row1.items.return_value = [("WorkoutId", "w2")]
@@ -80,6 +86,11 @@ class TestGetGenaiAdvice(unittest.TestCase):
         """Import the function under test inside setUp so each test is isolated."""
         from data_fetcher import get_genai_advice  # Line written by Claude
         self.get_genai_advice = get_genai_advice  # Line written by Claude
+        
+        # Mock BigQuery Client to prevent real API calls during GenAI tests
+        patcher = patch("data_fetcher.bigquery.Client")
+        self.mock_bq_client = patcher.start()
+        self.addCleanup(patcher.stop)
  
     def test_returns_dict(self):
         """Tests that get_genai_advice returns a dictionary."""
