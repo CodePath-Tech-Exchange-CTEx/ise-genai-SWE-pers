@@ -13,6 +13,12 @@ from google.cloud import bigquery
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import random
+from google.cloud import bigquery
+
+def _get_client():
+    return bigquery.Client(project="juan-gomez-fiu")
+
+
 
 # ---- Vertex AI setup ---- #
 PROJECT_ID = "juan-gomez-fiu"
@@ -66,26 +72,26 @@ def get_user_sensor_data(user_id, workout_id):
 
     This function currently returns random data. You will re-write it in Unit 3.
     """
-    sensor_data = []
-    sensor_types = [
-        "accelerometer",
-        "gyroscope",
-        "pressure",
-        "temperature",
-        "heart_rate",
-    ]
-    for index in range(random.randint(5, 100)):
-        random_minute = str(random.randint(0, 59))
-        if len(random_minute) == 1:
-            random_minute = "0" + random_minute
-        timestamp = "2024-01-01 00:" + random_minute + ":00"
-        data = random.random() * 100
-        sensor_type = random.choice(sensor_types)
-        sensor_data.append(
-            {"sensor_type": sensor_type, "timestamp": timestamp, "data": data}
-        )
-    return sensor_data
+    query = f"""SELECT 
+    t1.Timestamp,
+    t2.Name AS SensorName,
+    t1.SensorValue,
+    t2.Units
+FROM 
+    `juan-gomez-fiu`.SWEpers.SensorData AS t1
+JOIN 
+    `juan-gomez-fiu`.SWEpers.SensorTypes AS t2
+ON 
+    t1.SensorId = t2.SensorId
+WHERE 
+    t1.WorkoutID = '{workout_id}';"""
 
+
+    results = _get_client().query(query).result()
+
+    sensor_data = [{"sensor_type": row.SensorName, "timestamp": row.Timestamp, "data": row.SensorValue,"units": row.Units} for row in results]
+    return sensor_data
+   
 
 def get_user_workouts(user_id):
     """Returns a list of user's workouts. Some data in a workout may not be populated.
@@ -135,7 +141,6 @@ def get_user_workouts(user_id):
 def get_user_profile(user_id):
     """Returns information about the given user."""
     
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT UserId, Name, Username, ImageUrl, DateOfBirth
@@ -150,7 +155,7 @@ def get_user_profile(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
 
     row = None
     for r in results:
@@ -170,7 +175,6 @@ def get_user_profile(user_id):
 
 def get_post(user_id):
     """Returns the most recent post for a user."""
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
@@ -192,8 +196,8 @@ def get_post(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
+    results2 = _get_client().query(query2, job_config=job_config).result()
 
     row = next(results, None)
     row2 = next(results2, None)
@@ -210,7 +214,6 @@ def get_post(user_id):
 
 def get_user_posts(user_id):
     """Returns a list of a user's posts."""
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
@@ -233,8 +236,8 @@ def get_user_posts(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
+    results2 = _get_client().query(query2, job_config=job_config).result()
 
     row2 = next(results2, None)
     if row2 is None:
@@ -327,16 +330,20 @@ Respond with ONLY the advice text, no extra formatting."""
         "image": image,
     }
 
+
+
+
 ##############################
 # SAMPLE BIGQUERY QUERY
 ##############################
 
 # from google.cloud import bigquery
 
-# client = bigquery.Client(project="juan-gomez-fiu")
+# def _get_client():
+    return bigquery.Client(project="juan-gomez-fiu")
 
 # query = "SELECT * FROM `juan-gomez-fiu.SWEpers.Workouts`"
-# results = client.query(query).result()
+# results = _get_client().query(query).result()
 
 # for row in results:
 #     print(dict(row))
