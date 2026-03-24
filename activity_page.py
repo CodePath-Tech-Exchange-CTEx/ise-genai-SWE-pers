@@ -61,7 +61,7 @@ def get_exercise_image(post_text):
     response = requests.get(url, headers=headers, params=params)
     data = response.json()
     
-    if data["results"]:
+    if data.get("results"):
         return data["results"][0]["urls"]["regular"]
     
     return None
