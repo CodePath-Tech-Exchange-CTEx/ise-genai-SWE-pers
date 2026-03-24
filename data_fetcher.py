@@ -196,21 +196,31 @@ def get_post(user_id):
         ]
     )
 
-    results = _get_client().query(query, job_config=job_config).result()
-    results2 = _get_client().query(query2, job_config=job_config).result()
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        results2 = _get_client().query(query2, job_config=job_config).result()
 
-    row = next(results, None)
-    row2 = next(results2, None)
-    if row is None:
-        raise ValueError(f"No posts found for user {user_id}.")
+        row = next(results, None)
+        row2 = next(results2, None)
+        if row is None or row2 is None:
+            raise ValueError(f"No posts found for user {user_id}.")
 
-    return {
-        "username": row2["Username"],
-        "user_image": row2["ImageUrl"],
-        "timestamp": row["Timestamp"],
-        "content": row["Content"],
-        "image_url": row["ImageUrl"],
-    }
+        return {
+            "username": row2["Username"],
+            "user_image": row2["ImageUrl"] or "https://placehold.co/50x50",
+            "timestamp": row["Timestamp"],
+            "content": row["Content"],
+            "image_url": row["ImageUrl"],
+        }
+    except Exception as e:
+        print(f"[get_post] Error: {e}")
+        return {
+            "username": "Unknown",
+            "user_image": "https://placehold.co/50x50",
+            "timestamp": "N/A",
+            "content": "No post available.",
+            "image_url": None,
+        }
 
 def get_user_posts(user_id):
     """Returns a list of a user's posts."""
