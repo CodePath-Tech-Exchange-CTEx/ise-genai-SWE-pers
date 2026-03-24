@@ -10,8 +10,9 @@ from datetime import datetime
 class TestDataFetcher(unittest.TestCase):
     """One class to hold all sensor data tests"""
 
-    @patch('data_fetcher.client')
-    def test_get_user_sensor_data(self, mock_client):
+    @patch('data_fetcher.bigquery.Client')
+    def test_get_user_sensor_data(self, MockClient):
+        mock_client = MockClient.return_value
         # Setup the shared Mock for the BigQuery Job
         mock_query_job = Mock()
         mock_client.query.return_value = mock_query_job

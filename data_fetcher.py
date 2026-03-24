@@ -15,7 +15,8 @@ from vertexai.generative_models import GenerativeModel
 import random
 from google.cloud import bigquery
 
-client = bigquery.Client(project="juan-gomez-fiu")
+def _get_client():
+    return bigquery.Client(project="juan-gomez-fiu")
 
 
 
@@ -86,7 +87,7 @@ WHERE
     t1.WorkoutID = '{workout_id}';"""
 
 
-    results = client.query(query).result()
+    results = _get_client().query(query).result()
 
     sensor_data = [{"sensor_type": row.SensorName, "timestamp": row.Timestamp, "data": row.SensorValue,"units": row.Units} for row in results]
     return sensor_data
@@ -140,7 +141,6 @@ def get_user_workouts(user_id):
 def get_user_profile(user_id):
     """Returns information about the given user."""
     
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT UserId, Name, Username, ImageUrl, DateOfBirth
@@ -155,7 +155,7 @@ def get_user_profile(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
 
     row = None
     for r in results:
@@ -175,7 +175,6 @@ def get_user_profile(user_id):
 
 def get_post(user_id):
     """Returns the most recent post for a user."""
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
@@ -197,8 +196,8 @@ def get_post(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
+    results2 = _get_client().query(query2, job_config=job_config).result()
 
     row = next(results, None)
     row2 = next(results2, None)
@@ -215,7 +214,6 @@ def get_post(user_id):
 
 def get_user_posts(user_id):
     """Returns a list of a user's posts."""
-    client = bigquery.Client(project="juan-gomez-fiu")
 
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
@@ -238,8 +236,8 @@ def get_user_posts(user_id):
         ]
     )
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
+    results = _get_client().query(query, job_config=job_config).result()
+    results2 = _get_client().query(query2, job_config=job_config).result()
 
     row2 = next(results2, None)
     if row2 is None:
@@ -341,10 +339,11 @@ Respond with ONLY the advice text, no extra formatting."""
 
 # from google.cloud import bigquery
 
-# client = bigquery.Client(project="juan-gomez-fiu")
+# def _get_client():
+    return bigquery.Client(project="juan-gomez-fiu")
 
 # query = "SELECT * FROM `juan-gomez-fiu.SWEpers.Workouts`"
-# results = client.query(query).result()
+# results = _get_client().query(query).result()
 
 # for row in results:
 #     print(dict(row))
