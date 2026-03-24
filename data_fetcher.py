@@ -100,7 +100,7 @@ def get_user_workouts(user_id):
     workouts = []
     
     # Note: Replace 'your_dataset' with your actual BigQuery dataset name.
-    query = f"SELECT * FROM `{PROJECT_ID}.SWEpers.workouts` WHERE user_id = @user_id"
+    query = f"SELECT * FROM `{PROJECT_ID}.SWEpers.Workouts` WHERE UserId = @user_id"
     
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
@@ -112,15 +112,24 @@ def get_user_workouts(user_id):
     
     for row in query_job.result():
         row_dict = dict(row.items())
+        
+        start_lat = row_dict.get("StartLocationLat")
+        start_lng = row_dict.get("StartLocationLong")
+        start_lat_lng = (start_lat, start_lng) if start_lat is not None and start_lng is not None else None
+        
+        end_lat = row_dict.get("EndLocationLat")
+        end_lng = row_dict.get("EndLocationLong")
+        end_lat_lng = (end_lat, end_lng) if end_lat is not None and end_lng is not None else None
+
         workouts.append({
-            "workout_id": row_dict.get("workout_id"),
-            "start_timestamp": str(row_dict.get("start_timestamp")) if row_dict.get("start_timestamp") else None,
-            "end_timestamp": str(row_dict.get("end_timestamp")) if row_dict.get("end_timestamp") else None,
-            "start_lat_lng": row_dict.get("start_lat_lng"),
-            "end_lat_lng": row_dict.get("end_lat_lng"),
-            "distance": row_dict.get("distance"),
-            "steps": row_dict.get("steps"),
-            "calories_burned": row_dict.get("calories_burned"),
+            "workout_id": row_dict.get("WorkoutId"),
+            "start_timestamp": str(row_dict.get("StartTimestamp")) if row_dict.get("StartTimestamp") else None,
+            "end_timestamp": str(row_dict.get("EndTimestamp")) if row_dict.get("EndTimestamp") else None,
+            "start_lat_lng": start_lat_lng,
+            "end_lat_lng": end_lat_lng,
+            "distance": row_dict.get("TotalDistance"),
+            "steps": row_dict.get("TotalSteps"),
+            "calories_burned": row_dict.get("CaloriesBurned"),
         })
         
     return workouts
