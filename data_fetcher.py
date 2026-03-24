@@ -9,7 +9,6 @@
 #############################################################################
 
 from datetime import datetime
-
 from google.cloud import bigquery
 import vertexai
 from vertexai.generative_models import GenerativeModel
@@ -19,7 +18,7 @@ import random
 PROJECT_ID = "juan-gomez-fiu"
 LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
-gen_model = GenerativeModel("gemini-1.5-flash")
+gen_model = GenerativeModel("gemini-2.0-flash-001")
 
 # ---- Database setup ---- #
 bq_client = bigquery.Client(project=PROJECT_ID)
@@ -146,9 +145,49 @@ def get_user_profile(user_id):
 
 
 def get_post(user_id):
-    """returns post data for app"""
-    return posts[user_id]
+    """Fetches user info from BigQuery Users table and builds a post dict."""
 
+    client = bigquery.Client(project="juan-gomez-fiu")
+
+    query = """
+        SELECT UserId, Username, ImageUrl
+        FROM `juan-gomez-fiu.SWEpers.Users`
+        WHERE UserId = @UserId
+        LIMIT 1
+    """
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("UserId", "STRING", user_id)
+        ]
+    )
+
+    results = client.query(query, job_config=job_config).result()
+
+    row = None
+    for r in results:
+        row = r
+        break
+
+    if row is None:
+        raise ValueError(f"User {user_id} not found in Users table.")
+
+    content = random.choice(
+        [
+            "Had a great workout today!",
+            "The AI really motivated me to push myself further, I ran 10 miles!",
+            "Me and the boys went hiking for 2 hours up Mount Fuji the other day.\nIt was great!"
+        ]
+    )
+
+    return {
+        "user_id": row["UserId"],
+        "username": row["Username"],
+        "user_image": "https://i.etsystatic.com/22467704/r/il/e9acd2/2660697461/il_300x300.2660697461_h7db.jpg",
+        "timestamp": "2026-03-22 12:00:00",   # hardcoded
+        "content": content,  # hardcoded
+        "post_image": row["ImageUrl"],  
+    }
 
 def get_user_posts(user_id):
     """Returns a list of a user's posts.
@@ -243,3 +282,17 @@ Respond with ONLY the advice text, no extra formatting."""
         "content": advice_content,
         "image": image,
     }
+
+##############################
+# SAMPLE BIGQUERY QUERY
+##############################
+
+# from google.cloud import bigquery
+
+# client = bigquery.Client(project="juan-gomez-fiu")
+
+# query = "SELECT * FROM `juan-gomez-fiu.SWEpers.Workouts`"
+# results = client.query(query).result()
+
+# for row in results:
+#     print(dict(row))
