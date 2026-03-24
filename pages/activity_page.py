@@ -4,7 +4,7 @@ import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 client = bigquery.Client(project="juan-gomez-fiu")
 ACCESS_KEY = os.environ.get("ACCESS_KEY")
