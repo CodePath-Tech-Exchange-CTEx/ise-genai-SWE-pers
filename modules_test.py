@@ -156,7 +156,19 @@ class TestDisplayRecentWorkouts(unittest.TestCase):
     """Tests the display_recent_workouts function."""
 
     def test_recent_workout_select_workout(self):
-        at = AppTest.from_file("app.py")
+        def run_recent_workouts_module():
+            from modules import display_recent_workouts
+            mock_workouts = [{
+                "workout_id": "workout0",
+                "start_timestamp": "2024-01-01 00:00:00",
+                "end_timestamp": "2024-01-01 00:30:00",
+                "distance": 5.0,
+                "steps": 6000,
+                "calories_burned": 400
+            }]
+            display_recent_workouts(mock_workouts)
+
+        at = AppTest.from_function(run_recent_workouts_module)
         at.run()
 
         # Test for the first workout
@@ -165,10 +177,22 @@ class TestDisplayRecentWorkouts(unittest.TestCase):
         at.run()
 
         text_area = at.text_area(key="workout_text_area")
-        assert "workout0" in text_area.value
+        self.assertIn("workout0", text_area.value)
 
     def test_recent_workout_select_an_option(self):
-        at = AppTest.from_file("app.py")
+        def run_recent_workouts_module():
+            from modules import display_recent_workouts
+            mock_workouts = [{
+                "workout_id": "workout0",
+                "start_timestamp": "2024-01-01 00:00:00",
+                "end_timestamp": "2024-01-01 00:30:00",
+                "distance": 5.0,
+                "steps": 6000,
+                "calories_burned": 400
+            }]
+            display_recent_workouts(mock_workouts)
+
+        at = AppTest.from_function(run_recent_workouts_module)
         at.run()
 
         #Test for "select an option"
@@ -178,8 +202,8 @@ class TestDisplayRecentWorkouts(unittest.TestCase):
         at.run()
 
         warnings = at.warning
-        assert len(warnings) > 0
-        assert "Please select a workout" in warnings[0].value
+        self.assertTrue(len(warnings) > 0)
+        self.assertIn("Please select a workout", warnings[0].value)
 
 
 if __name__ == "__main__":

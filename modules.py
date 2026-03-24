@@ -147,10 +147,6 @@ def display_recent_workouts(workouts_list):
        params: A list of user_workout info
        returns: None
     """
-    
-    import streamlit as st
-
-def display_recent_workouts(workouts_list):
     # 1. Initialize visibility state
     if "show_area" not in st.session_state:
         st.session_state.show_area = False
