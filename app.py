@@ -10,7 +10,7 @@ from modules import display_my_custom_component, display_post, display_genai_adv
 from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts, get_post
 
 userId = 'user1'
-data = get_genai_advice(user_id=userId)
+
 
 def render_genai_section(user_id):
     """Fetches and displays the GenAI advice component."""
@@ -38,14 +38,7 @@ def display_app_page():
     render_genai_section(userId)
     post_data = get_post(userId)
     
-    
-    if "user_workouts" not in st.session_state:
-        st.session_state.user_workouts = get_user_workouts("random_user_id")
-    
-    display_recent_workouts(st.session_state.user_workouts)
-    # display_recent_workouts([])
-    # display_recent_workouts(None)
-
+ 
     # ---- Activity Summary ---- #
     workouts_list = get_user_workouts(userId)
 
