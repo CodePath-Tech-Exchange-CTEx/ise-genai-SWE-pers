@@ -29,6 +29,15 @@ def display_my_custom_component(value):
     html_file_name = "my_custom_component"
     create_component(data, html_file_name)
 
+def display_user_profile(name, username, user_image, date_of_birth):
+    col1, col2 = st.columns([1,9])
+    with col1:
+        st.image(user_image, width=50)
+    with col2:
+        st.text(name)
+        st.text(username)
+        st.text(date_of_birth) 
+
 
 def display_post(username, user_image, timestamp, content, image_url):
     """Write a good docstring here."""
