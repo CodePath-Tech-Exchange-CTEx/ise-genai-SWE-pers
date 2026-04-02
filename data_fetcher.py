@@ -2,10 +2,6 @@
 # data_fetcher.py
 #
 # This file contains functions to fetch data needed for the app.
-#
-# You will re-write these functions in Unit 3, and are welcome to alter the
-# data returned in the meantime. We will replace this file with other data when
-# testing earlier units.
 #############################################################################
 
 from datetime import datetime
@@ -13,6 +9,11 @@ from google.cloud import bigquery
 import vertexai
 from vertexai.generative_models import GenerativeModel
 import random
+import requests
+
+# ---- BigQuery client ---- #
+def _get_client():
+    return bigquery.Client(project="juan-gomez-fiu")
 
 # ---- Vertex AI setup ---- #
 PROJECT_ID = "juan-gomez-fiu"
@@ -20,143 +21,170 @@ LOCATION = "us-central1"
 vertexai.init(project=PROJECT_ID, location=LOCATION)
 gen_model = GenerativeModel("gemini-2.0-flash-001")
 
-posts = {
-    "user5": {
-        "username": "NateWorksOutaLot",
-        "user_image": "https://i.etsystatic.com/22467704/r/il/e9acd2/2660697461/il_300x300.2660697461_h7db.jpg",
-        "timestamp": "2025-05-04 07:30:00",
-        "content": "Me and the boys went hiking for 2 hours up Mount Fuji the other day.\nIt was great!",
-        "post_image": "https://media.istockphoto.com/id/1949006055/photo/group-of-active-hikers-walks-uphill-in-mountains.jpg?s=612x612&w=0&k=20&c=fS4V-GX6bYIKfWA6EgAt6r1osLy-YvlaAgV7wgVA2Pc=",
-    }
-}
-users = {
-    "user1": {
-        "full_name": "Remi",
-        "username": "remi_the_rems",
-        "date_of_birth": "1990-01-01",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Puma_shoes.jpg",
-        "friends": ["user2", "user3", "user4"],
-    },
-    "user2": {
-        "full_name": "Blake",
-        "username": "blake",
-        "date_of_birth": "1990-01-01",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Puma_shoes.jpg",
-        "friends": ["user1"],
-    },
-    "user3": {
-        "full_name": "Jordan",
-        "username": "jordanjordanjordan",
-        "date_of_birth": "1990-01-01",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Puma_shoes.jpg",
-        "friends": ["user1", "user4"],
-    },
-    "user4": {
-        "full_name": "Gemmy",
-        "username": "gems",
-        "date_of_birth": "1990-01-01",
-        "profile_image": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Puma_shoes.jpg",
-        "friends": ["user1", "user3"],
-    },
-}
 
-
-def get_user_sensor_data(user_id, workout_id):
-    """Returns a list of timestampped information for a given workout.
-
-    This function currently returns random data. You will re-write it in Unit 3.
+# ---- Used by: community_page.py ---- #
+def get_user_posts_from_friends(user_id):
+    """Returns the 10 most recent posts from a user's friends."""
+    query = """
+        SELECT p.PostId, p.AuthorId, p.Timestamp, p.Content,
+               u.Username
+        FROM `juan-gomez-fiu.SWEpers.Posts` p
+        JOIN `juan-gomez-fiu.SWEpers.Friends` f
+            ON (p.AuthorId = f.UserId2 AND f.UserId1 = @user_id)
+            OR (p.AuthorId = f.UserId1 AND f.UserId2 = @user_id)
+        JOIN `juan-gomez-fiu.SWEpers.Users` u
+            ON p.AuthorId = u.UserId
+        ORDER BY p.Timestamp DESC
+        LIMIT 10
     """
-    sensor_data = []
-    sensor_types = [
-        "accelerometer",
-        "gyroscope",
-        "pressure",
-        "temperature",
-        "heart_rate",
-    ]
-    for index in range(random.randint(5, 100)):
-        random_minute = str(random.randint(0, 59))
-        if len(random_minute) == 1:
-            random_minute = "0" + random_minute
-        timestamp = "2024-01-01 00:" + random_minute + ":00"
-        data = random.random() * 100
-        sensor_type = random.choice(sensor_types)
-        sensor_data.append(
-            {"sensor_type": sensor_type, "timestamp": timestamp, "data": data}
-        )
-    return sensor_data
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        posts = []
+        for row in results:
+            row_dict = dict(row.items())
+            posts.append({
+                "post_id": row_dict.get("PostId", ""),
+                "author_id": row_dict.get("AuthorId", ""),
+                "username": row_dict.get("Username", "Unknown"),
+                "timestamp": str(row_dict.get("Timestamp", "")),
+                "content": row_dict.get("Content", ""),
+            })
+        return posts
+    except Exception as e:
+        print(f"[get_user_posts_from_friends] Error: {e}")
+        return []
 
 
+# ---- Used by: activity_page.py, community_page.py ---- #
+def get_users():
+    """Returns a list of all user IDs."""
+    try:
+        query = "SELECT UserId FROM `juan-gomez-fiu`.SWEpers.Users"
+        results = _get_client().query(query).result()
+        return [row.UserId for row in results]
+    except Exception as e:
+        print(f"[get_users] Error: {e}")
+        return []
+
+
+# ---- Used by: activity_page.py ---- #
+def get_exercise_image(post_text):
+    """Returns an exercise image URL from Unsplash based on post text."""
+    import os
+    ACCESS_KEY = os.environ.get("ACCESS_KEY")
+    url = "https://api.unsplash.com/search/photos"
+    headers = {"Authorization": f"Client-ID {ACCESS_KEY}"}
+    params = {"query": f"{post_text} exercise gym", "per_page": 1}
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()
+        if data.get("results"):
+            return data["results"][0]["urls"]["regular"]
+    except Exception as e:
+        print(f"[get_exercise_image] Error: {e}")
+    return None
+
+
+# ---- Used by: app.py, modules_test.py ---- #
 def get_user_workouts(user_id):
-    """Returns a list of user's workouts.
-
-    This function currently returns random data. You will re-write it in Unit 3.
-    """
+    """Returns a list of user's workouts. Some data in a workout may not be populated."""
     workouts = []
-    for index in range(random.randint(1, 3)):
-        random_lat_lng_1 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        random_lat_lng_2 = (
-            1 + random.randint(0, 100) / 100,
-            4 + random.randint(0, 100) / 100,
-        )
-        workouts.append(
-            {
-                "workout_id": f"workout{index}",
-                "start_timestamp": "2024-01-01 00:00:00",
-                "end_timestamp": "2024-01-01 00:30:00",
-                "start_lat_lng": random_lat_lng_1,
-                "end_lat_lng": random_lat_lng_2,
-                "distance": random.randint(0, 200) / 10.0,
-                "steps": random.randint(0, 20000),
-                "calories_burned": random.randint(0, 100),
-            }
-        )
+    query = f"""SELECT 
+    * FROM 
+    `juan-gomez-fiu`.SWEpers.Workouts
+WHERE 
+    UserId = @user_id
+ORDER BY 
+    EndTimestamp DESC
+LIMIT 3"""
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
+        ]
+    )
+    try:
+        query_job = _get_client().query(query, job_config=job_config)
+        for row in query_job.result():
+            row_dict = dict(row.items())
+            start_lat = row_dict.get("StartLocationLat")
+            start_lng = row_dict.get("StartLocationLong")
+            end_lat = row_dict.get("EndLocationLat")
+            end_lng = row_dict.get("EndLocationLong")
+            workouts.append({
+                "workout_id": row_dict.get("WorkoutId"),
+                "start_timestamp": str(row_dict.get("StartTimestamp")) if row_dict.get("StartTimestamp") else None,
+                "end_timestamp": str(row_dict.get("EndTimestamp")) if row_dict.get("EndTimestamp") else None,
+                "start_lat_lng": (start_lat, start_lng) if start_lat is not None and start_lng is not None else None,
+                "end_lat_lng": (end_lat, end_lng) if end_lat is not None and end_lng is not None else None,
+                "distance": row_dict.get("TotalDistance"),
+                "steps": row_dict.get("TotalSteps"),
+                "calories_burned": row_dict.get("CaloriesBurned"),
+            })
+    except Exception as e:
+        print(f"[get_user_workouts] Error: {e}")
     return workouts
 
 
+# ---- Used by: data_fetcher_test.py ---- #
+def get_user_sensor_data(user_id, workout_id):
+    """Returns sensor data for a given workout."""
+    query = f"""
+        SELECT t1.Timestamp, t2.Name AS SensorName, t1.SensorValue, t2.Units
+        FROM `juan-gomez-fiu`.SWEpers.SensorData AS t1
+        JOIN `juan-gomez-fiu`.SWEpers.SensorTypes AS t2
+        ON t1.SensorId = t2.SensorId
+        WHERE t1.WorkoutID = '{workout_id}'
+    """
+    try:
+        results = _get_client().query(query).result()
+        return [
+            {"sensor_type": row.SensorName, "timestamp": row.Timestamp,
+             "data": row.SensorValue, "units": row.Units}
+            for row in results
+        ]
+    except Exception as e:
+        print(f"[get_user_sensor_data] Error: {e}")
+        return []
+
+
+# ---- Used by: app.py ---- #
 def get_user_profile(user_id):
     """Returns information about the given user."""
-    
-    client = bigquery.Client(project="juan-gomez-fiu")
-
     query = """
         SELECT UserId, Name, Username, ImageUrl, DateOfBirth
         FROM `juan-gomez-fiu.SWEpers.Users`
         WHERE UserId = @user_id
         LIMIT 1
     """
-
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
-
-    results = client.query(query, job_config=job_config).result()
-
-    row = None
-    for r in results:
-        row = r
-        break
-
-    if row is None:
-        raise ValueError(f"User {user_id} not found in Users table.")
-
-    return {
-        "name": row["Name"],
-        "username": row["Username"],
-        "user_image": row["ImageUrl"],
-        "date_of_birth": str(row["DateOfBirth"]),  # safer for Streamlit display
-    }
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        row = next(iter(results), None)
+        if row is None:
+            raise ValueError(f"User {user_id} not found in Users table.")
+        return {
+            "name": row["Name"],
+            "username": row["Username"],
+            "user_image": row["ImageUrl"],
+            "date_of_birth": str(row["DateOfBirth"]),
+        }
+    except Exception as e:
+        print(f"[get_user_profile] Error: {e}")
+        return {}
 
 
+# ---- Used by: app.py ---- #
 def get_post(user_id):
     """Returns the most recent post for a user."""
-    client = bigquery.Client(project="juan-gomez-fiu")
-
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
         FROM `juan-gomez-fiu.SWEpers.Posts`
@@ -170,33 +198,64 @@ def get_post(user_id):
         WHERE UserId = @user_id
         LIMIT 1
     """
-
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        results2 = _get_client().query(query2, job_config=job_config).result()
+        row = next(iter(results), None)
+        row2 = next(iter(results2), None)
+        if row is None or row2 is None:
+            raise ValueError(f"No posts found for user {user_id}.")
+        return {
+            "username": row2["Username"],
+            "user_image": row2["ImageUrl"] or "https://placehold.co/50x50",
+            "timestamp": row["Timestamp"],
+            "content": row["Content"],
+            "image_url": row["ImageUrl"],
+        }
+    except Exception as e:
+        print(f"[get_post] Error: {e}")
+        return {
+            "username": "Unknown",
+            "user_image": "https://placehold.co/50x50",
+            "timestamp": "N/A",
+            "content": "No post available.",
+            "image_url": None,
+        }
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        results2 = _get_client().query(query2, job_config=job_config).result()
 
-    row = next(results, None)
-    row2 = next(results2, None)
-    if row is None:
-        raise ValueError(f"No posts found for user {user_id}.")
+        row = next(results, None)
+        row2 = next(results2, None)
+        if row is None or row2 is None:
+            raise ValueError(f"No posts found for user {user_id}.")
 
-    return {
-        "username": row2["Username"],
-        "user_image": row2["ImageUrl"],
-        "timestamp": row["Timestamp"],
-        "content": row["Content"],
-        "image_url": row["ImageUrl"],
-    }
+        return {
+            "username": row2["Username"],
+            "user_image": row2["ImageUrl"] or "https://placehold.co/50x50",
+            "timestamp": row["Timestamp"],
+            "content": row["Content"],
+            "image_url": row["ImageUrl"],
+        }
+    except Exception as e:
+        print(f"[get_post] Error: {e}")
+        return {
+            "username": "Unknown",
+            "user_image": "https://placehold.co/50x50",
+            "timestamp": "N/A",
+            "content": "No post available.",
+            "image_url": None,
+        }
 
+# ---- Used by: app.py ---- #
 def get_user_posts(user_id):
     """Returns a list of a user's posts."""
-    client = bigquery.Client(project="juan-gomez-fiu")
-
     query = """
         SELECT PostId, AuthorId, Timestamp, ImageUrl, Content
         FROM `juan-gomez-fiu.SWEpers.Posts`
@@ -204,53 +263,43 @@ def get_user_posts(user_id):
         ORDER BY Timestamp DESC
         LIMIT 3
     """
-
     query2 = """
         SELECT Username, ImageUrl
         FROM `juan-gomez-fiu.SWEpers.Users`
         WHERE UserId = @user_id
         LIMIT 1
     """
-
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
         ]
     )
+    try:
+        results = _get_client().query(query, job_config=job_config).result()
+        results2 = _get_client().query(query2, job_config=job_config).result()
+        row2 = next(iter(results2), None)
+        if row2 is None:
+            raise ValueError(f"User {user_id} not found.")
+        posts = []
+        for row in results:
+            posts.append({
+                "username": row2["Username"],
+                "user_image": row2["ImageUrl"],
+                "timestamp": row["Timestamp"],
+                "content": row["Content"],
+                "image_url": row["ImageUrl"],
+            })
+        if not posts:
+            raise ValueError(f"No posts found for user {user_id}.")
+        return posts
+    except Exception as e:
+        print(f"[get_user_posts] Error: {e}")
+        return []
 
-    results = client.query(query, job_config=job_config).result()
-    results2 = client.query(query2, job_config=job_config).result()
 
-    row2 = next(results2, None)
-    if row2 is None:
-        raise ValueError(f"User {user_id} not found in Users table.")
-
-    posts = []
-    for row in results:
-        posts.append({
-            "username": row2["Username"],
-            "user_image": row2["ImageUrl"],
-            "timestamp": row["Timestamp"],
-            "content": row["Content"],
-            "image_url": row["ImageUrl"],
-        })
-
-    if not posts:
-        raise ValueError(f"No posts found for user {user_id}.")
-
-    return posts
-    
+# ---- Used by: app.py, community_page.py ---- #
 def get_genai_advice(user_id):
-    """Returns the most recent advice from the GenAI model based on user data.
-
-    Fetches the user's workout data, sends it to Gemini via Vertex AI,
-    and returns personalised fitness advice. Image is not always populated.
-
-    Input:  user_id (str)
-    Output: dict with keys advice_id, timestamp, content, image
-    """
-
-    # ---- 1. Gather the user's workout context ---- #
+    """Returns personalised fitness advice from Gemini based on user workout data."""
     workouts = get_user_workouts(user_id)
     sensor_summary = ""
 
@@ -262,7 +311,6 @@ def get_genai_advice(user_id):
                 f"  - {s['sensor_type']}: {s['data']:.1f} at {s['timestamp']}"
                 for s in sensor_data[:10]
             )
-
         workout_summary = "\n".join(
             f"  - {w['distance']} km, {w['steps']} steps, "
             f"{w['calories_burned']} cal ({w['start_timestamp']} to {w['end_timestamp']})"
@@ -271,7 +319,6 @@ def get_genai_advice(user_id):
     else:
         workout_summary = "  No workouts recorded yet."
 
-    # ---- 2. Build the prompt ---- #
     prompt = f"""You are a friendly and motivating fitness coach AI.
 Based on the following user workout data, give a short (2-3 sentence)
 piece of personalised fitness advice. Be encouraging and specific.
@@ -284,7 +331,6 @@ Latest sensor readings:
 
 Respond with ONLY the advice text, no extra formatting."""
 
-    # ---- 3. Call Vertex AI (Gemini) ---- #
     try:
         response = gen_model.generate_content(prompt)
         advice_content = response.text.strip()
@@ -295,7 +341,6 @@ Respond with ONLY the advice text, no extra formatting."""
             "remember to hydrate before your next workout."
         )
 
-    # ---- 4. Image: not populated 100% of the time ---- #
     motivational_images = [
         "https://plus.unsplash.com/premium_photo-1669048780129-051d670fa2d1?q=80&w=3870&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=3870&auto=format&fit=crop",
@@ -303,7 +348,6 @@ Respond with ONLY the advice text, no extra formatting."""
     ]
     image = random.choice(motivational_images) if random.random() > 0.5 else None
 
-    # ---- 5. Return the result ---- #
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return {
         "advice_id": f'advice_{user_id}_{now.replace(" ", "_")}',
@@ -311,17 +355,3 @@ Respond with ONLY the advice text, no extra formatting."""
         "content": advice_content,
         "image": image,
     }
-
-##############################
-# SAMPLE BIGQUERY QUERY
-##############################
-
-# from google.cloud import bigquery
-
-# client = bigquery.Client(project="juan-gomez-fiu")
-
-# query = "SELECT * FROM `juan-gomez-fiu.SWEpers.Workouts`"
-# results = client.query(query).result()
-
-# for row in results:
-#     print(dict(row))
