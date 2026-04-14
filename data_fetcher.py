@@ -101,7 +101,7 @@ WHERE
     UserId = @user_id
 ORDER BY 
     EndTimestamp DESC
-LIMIT 3"""
+"""
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
             bigquery.ScalarQueryParameter("user_id", "STRING", user_id)
