@@ -3,16 +3,14 @@ import os
 from dotenv import load_dotenv
 from google.cloud import bigquery
 from data_fetcher import get_users, get_user_workouts, get_exercise_image, _get_client
+from modules import require_user_selection
+
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 ACCESS_KEY = os.environ.get("ACCESS_KEY")
 
-if 'user_list' not in st.session_state:
-    st.session_state.user_list = []
 
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = ""
 
 if 'current_user_workouts' not in st.session_state:
     st.session_state.current_user_workouts = []
@@ -48,25 +46,43 @@ def add_post(author_id, content, image_url):
         raise e
 
 
-st.header("Activity Page")
+st.html("""
+    <style>
+        .block-container { padding-top: 0 !important; }
+        header[data-testid="stHeader"] { display: none !important; }
+        .hero-wrapper {
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            margin-top: -1rem;
+            width: 100vw;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+    <div class="hero-wrapper">
+        <div style="
+            background-color: #1a4fd6;
+            padding: 3rem 2rem;
+            text-align: center;
+        ">
+            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Activity Page</h1>
+        </div>
+    </div>
+""")
 
-if not st.session_state.user_list:
-    st.session_state.user_list = get_users()
-
-current_user = st.selectbox("Select User", ["Select a User"] + st.session_state.user_list)
-if current_user != "Select a User" and current_user != st.session_state.current_user:
-    st.session_state.current_user = current_user
-    st.session_state.current_user_workouts = []
+require_user_selection()
 
 st.divider()
 
 if st.session_state.current_user:
     if not st.session_state.current_user_workouts:
-        st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)[:3]
+        st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
 
     st.subheader("Workout History")
 
-    for workout in st.session_state.current_user_workouts:
+    for workout in st.session_state.current_user_workouts[:3]:
         if st.button(workout["workout_id"], key=workout["workout_id"]):
             st.session_state.current_workout = workout
 

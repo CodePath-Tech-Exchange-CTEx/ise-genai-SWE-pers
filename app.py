@@ -6,8 +6,8 @@
 #############################################################################
 
 import streamlit as st
-from modules import display_my_custom_component, display_post, display_genai_advice, display_activity_summary, display_recent_workouts
-from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts, get_post
+from modules import display_my_custom_component, display_post, display_genai_advice, display_activity_summary, display_recent_workouts, require_user_selection
+from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts, get_post, get_users
 
 userId = 'user1'
 
@@ -28,10 +28,50 @@ def render_genai_section(user_id):
 
 def display_app_page():
     """Displays the home page of the app."""
-    st.title('Welcome to SDS!')
+    st.html("""
+    <style>
+        .block-container { padding-top: 0 !important; }
+        header[data-testid="stHeader"] { display: none !important; }
+        .hero-wrapper {
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            margin-top: -1rem;
+            width: 100vw;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+    <div class="hero-wrapper">
+        <div style="
+            background-color: #1a4fd6;
+            padding: 3rem 2rem;
+            text-align: center;
+        ">
+            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Welcome to SDS</h1>
+        </div>
+    </div>
+""")
 
     # An example of displaying a custom component called "my_custom_component"
-    value = st.text_input('Enter your name')
+    if "current_user" not in st.session_state:
+        st.session_state.current_user = ""
+    if 'user_list' not in st.session_state:
+        st.session_state.user_list = get_users()
+
+    selected = st.selectbox(
+    "Select User",
+    ["Select a User"] + st.session_state.user_list,
+    index=0 if not st.session_state.get("current_user") 
+          else st.session_state.user_list.index(st.session_state.current_user) + 1,
+    key="home_user_selector"
+)
+
+    if selected != "Select a User" and selected != st.session_state.get("current_user"):
+        st.session_state.current_user = selected
+
+    value = st.session_state.current_user
     display_my_custom_component(value)
     st.divider() # Optional: adds a visual line between sections
     st.subheader("Your Personalized Advice")
