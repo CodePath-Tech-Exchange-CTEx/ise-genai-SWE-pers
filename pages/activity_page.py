@@ -62,7 +62,7 @@ st.divider()
 
 if st.session_state.current_user:
     if not st.session_state.current_user_workouts:
-        st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
+        st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)[:3]
 
     st.subheader("Workout History")
 
