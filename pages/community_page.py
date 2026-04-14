@@ -1,13 +1,9 @@
 import streamlit as st
-from modules import display_genai_advice, display_activity_summary, display_recent_workouts
+from modules import display_genai_advice, display_activity_summary, display_recent_workouts,require_user_selection
 from data_fetcher import get_genai_advice, get_user_posts_from_friends, get_users
 from datetime import datetime
 
-if 'user_list' not in st.session_state:
-    st.session_state.user_list = get_users()
 
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = ""
 
 def render_genai_section(user_id):
     """Fetches and displays the GenAI advice component."""
@@ -46,10 +42,34 @@ def display_friends_feed(user_id):
     else:
         for post in posts:
             display_friend_post(post)
+st.html("""
+    <style>
+        .block-container { padding-top: 0 !important; }
+        header[data-testid="stHeader"] { display: none !important; }
+        .hero-wrapper {
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            margin-top: -1rem;
+            width: 100vw;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+    <div class="hero-wrapper">
+        <div style="
+            background-color: #1a4fd6;
+            padding: 3rem 2rem;
+            text-align: center;
+        ">
+            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Community Page</h1>
+        </div>
+    </div>
+""")
 
-current_user = st.selectbox("Select User", ["Select a User"] + st.session_state.user_list)
-if current_user != "Select a User" and current_user != st.session_state.current_user:
-    st.session_state.current_user = current_user
+require_user_selection()
+
 
 if st.session_state.current_user:
     render_genai_section(st.session_state.current_user)

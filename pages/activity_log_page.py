@@ -1,7 +1,11 @@
 import streamlit as st
-from data_fetcher import get_users, get_user_workouts
+from data_fetcher import get_user_workouts
+from modules import require_user_selection
 from datetime import datetime
 
+
+if "current_user_workouts_activity" not in st.session_state:
+    st.session_state.current_user_workouts = []
 
 def get_user_total_stats():
     #sums up total calories, steps and distance stats from current_user_workouts
@@ -84,15 +88,6 @@ def render_table(workouts):
 st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
 
 
-if "user_list" not in st.session_state:
-    st.session_state.user_list = get_users()
-
-if "current_user" not in st.session_state:
-    st.session_state.current_user = None
-
-if "current_user_workouts" not in st.session_state:
-    st.session_state.current_user_workouts = []
-
 
 st.html("""
     <style>
@@ -121,16 +116,11 @@ st.html("""
     </div>
 """)
 
-st.divider()
+require_user_selection()
+st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
+st.session_state.total_dist,st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
 
-current_user = st.selectbox("Select User", ["Select a User"] + st.session_state.user_list)
 
-if current_user != "Select a User" and current_user != st.session_state.current_user:
-    st.session_state.current_user = current_user
-    st.session_state.current_user_workouts = get_user_workouts(current_user)
-    st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
-
-st.divider()
 
 st.markdown(f"### {len(st.session_state.current_user_workouts)} workouts recorded")
 
@@ -161,11 +151,8 @@ st.markdown("""
 
 if st.session_state.current_user_workouts:
     render_table(format_user_stats(st.session_state.current_user_workouts))
-
-    
-   
-
-
+else:
+    st.info("No workouts found")
 
 st.divider()
 

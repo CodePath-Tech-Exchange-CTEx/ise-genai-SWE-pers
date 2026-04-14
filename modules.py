@@ -9,7 +9,26 @@
 
 from internals import create_component
 import streamlit as st
+from data_fetcher import get_users
 
+
+def require_user_selection():
+    """Shows user selectbox if no user is selected. Returns True if ready to render page."""
+    if st.session_state.get("current_user"):
+        return True
+    
+    if 'user_list' not in st.session_state:
+        st.session_state.user_list = get_users()
+    
+    st.info("Please select a user to continue.")
+    selected = st.selectbox("Select User", ["Select a User"] + st.session_state.user_list)
+    
+    if selected != "Select a User":
+        st.session_state.current_user = selected
+        st.rerun()
+      
+    
+    st.stop()
 
 # This one has been written for you as an example. You may change it as wanted.
 def display_my_custom_component(value):
