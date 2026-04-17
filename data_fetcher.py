@@ -227,24 +227,32 @@ def get_post(user_id):
             "image_url": None,
         }
 
+
+# ---- Used by: pages/home.py ---- #
+def get_latest_post():
+    """Returns the most recent post from any user."""
+    query = """
+        SELECT p.PostId, p.AuthorId, p.Timestamp, p.ImageUrl, p.Content,
+               u.Username, u.ImageUrl AS UserImage
+        FROM `juan-gomez-fiu.SWEpers.Posts` p
+        JOIN `juan-gomez-fiu.SWEpers.Users` u ON p.AuthorId = u.UserId
+        ORDER BY p.Timestamp DESC
+        LIMIT 1
+    """
     try:
-        results = _get_client().query(query, job_config=job_config).result()
-        results2 = _get_client().query(query2, job_config=job_config).result()
-
-        row = next(results, None)
-        row2 = next(results2, None)
-        if row is None or row2 is None:
-            raise ValueError(f"No posts found for user {user_id}.")
-
+        results = _get_client().query(query).result()
+        row = next(iter(results), None)
+        if row is None:
+            raise ValueError("No posts found.")
         return {
-            "username": row2["Username"],
-            "user_image": row2["ImageUrl"] or "https://placehold.co/50x50",
+            "username": row["Username"],
+            "user_image": row["UserImage"] or "https://placehold.co/50x50",
             "timestamp": row["Timestamp"],
             "content": row["Content"],
             "image_url": row["ImageUrl"],
         }
     except Exception as e:
-        print(f"[get_post] Error: {e}")
+        print(f"[get_latest_post] Error: {e}")
         return {
             "username": "Unknown",
             "user_image": "https://placehold.co/50x50",
@@ -252,6 +260,7 @@ def get_post(user_id):
             "content": "No post available.",
             "image_url": None,
         }
+
 
 # ---- Used by: app.py ---- #
 def get_user_posts(user_id):
