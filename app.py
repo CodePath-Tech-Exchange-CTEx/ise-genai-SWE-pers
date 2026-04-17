@@ -1,75 +1,62 @@
 #############################################################################
 # app.py
 #
-# This file contains the entrypoint for the app.
-#
+# Central router. Sets up the sidebar (branding + user selector) then
+# hands off to whichever page the user navigates to via st.navigation().
 #############################################################################
 
 import streamlit as st
-from modules import display_my_custom_component, display_post, display_genai_advice, display_activity_summary, display_recent_workouts, require_user_selection
-from data_fetcher import get_user_posts, get_genai_advice, get_user_profile, get_user_sensor_data, get_user_workouts, get_post, get_users
 
-userId = 'user1'
-
-
-def render_genai_section(user_id):
-    """Fetches and displays the GenAI advice component."""
-    # 1. Fetch the data inside the function
-    advice_data = get_genai_advice(user_id=user_id)
-    
-    # 2. Extract values with safety defaults
-    timestamp = advice_data.get("timestamp", "No Date Known...")
-    content = advice_data.get("content", "No Content Known...")
-    image = advice_data.get("image") # modules.py will handle the None fallback
-    
-    # 3. Call the display module
-    display_genai_advice(timestamp, content, image)
-
-
-def display_app_page():
-    """Displays the home page of the app."""
-    st.html("""
-    <style>
-        .block-container { padding-top: 0 !important; }
-        header[data-testid="stHeader"] { display: none !important; }
-        .hero-wrapper {
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: -1rem;
-            width: 100vw;
-            margin-bottom: 1.5rem;
-        }
-    </style>
-    <div class="hero-wrapper">
-        <div style="
-            background-color: #1a4fd6;
-            padding: 3rem 2rem;
-            text-align: center;
-        ">
-            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Welcome to SDS</h1>
-        </div>
-    </div>
-""")
-
-    # An example of displaying a custom component called "my_custom_component"
-    if "current_user" not in st.session_state:
-        st.session_state.current_user = ""
-    if 'user_list' not in st.session_state:
-        st.session_state.user_list = get_users()
-
-    selected = st.selectbox(
-    "Select User",
-    ["Select a User"] + st.session_state.user_list,
-    index=0 if not st.session_state.get("current_user") 
-          else st.session_state.user_list.index(st.session_state.current_user) + 1,
-    key="home_user_selector"
+st.set_page_config(
+    page_title="SWE-pers",
+    page_icon="💪",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-    if selected != "Select a User" and selected != st.session_state.get("current_user"):
+from data_fetcher import get_users
+
+# ---- Session state defaults ---- #
+if "current_user" not in st.session_state:
+    st.session_state.current_user = ""
+if "user_list" not in st.session_state:
+    st.session_state.user_list = get_users()
+
+# ---- Sidebar: Branding → User Selector (appears ABOVE nav links) ---- #
+with st.sidebar:
+    st.markdown("## 💪 SWE-pers")
+    st.caption("Social Workout Experience")
+    st.divider()
+
+    user_list = st.session_state.user_list
+    current = st.session_state.get("current_user", "")
+
+    options = ["Select a User"] + user_list
+    current_index = (user_list.index(current) + 1) if current in user_list else 0
+
+    selected = st.selectbox(
+        "Active User", options, index=current_index, key="sidebar_user_selector"
+    )
+
+    if selected != "Select a User" and selected != current:
         st.session_state.current_user = selected
+        # Clear cached workout data when user changes
+        st.session_state.pop("current_user_workouts", None)
+        st.rerun()
+
+    if current:
+        st.success(f"Logged in as **{current}**")
+
+    st.divider()
+
+# ---- Navigation (renders nav links in sidebar below the content above) ---- #
+home = st.Page("pages/home.py", title="Home", icon="🏠", default=True)
+activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")
+activity_log = st.Page("pages/activity_log_page.py", title="Activity Log", icon="📊")
+community = st.Page("pages/community_page.py", title="Community", icon="👥")
+
+pg = st.navigation([home, activity, activity_log, community])
+pg.run()
 
     value = st.session_state.current_user
     display_my_custom_component(value)

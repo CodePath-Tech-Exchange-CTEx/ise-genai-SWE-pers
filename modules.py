@@ -13,24 +13,13 @@ from data_fetcher import get_users
 
 
 def require_user_selection():
-    """Shows user selectbox if no user is selected. Returns True if ready to render page."""
+    """Stops page render if no user is selected. Sidebar is managed by app.py."""
     if st.session_state.get("current_user"):
         return True
-    
-    if 'user_list' not in st.session_state:
-        st.session_state.user_list = get_users()
-    
-    st.info("Please select a user to continue.")
-    selected = st.selectbox("Select User", ["Select a User"] + st.session_state.user_list)
-    
-    if selected != "Select a User":
-        st.session_state.current_user = selected
-        st.rerun()
-      
-    
+    st.info("Select a user from the sidebar to get started.")
     st.stop()
 
-# This one has been written for you as an example. You may change it as wanted.
+
 def display_my_custom_component(value):
     """Displays a 'my custom component' which showcases an example of how custom
     components work.
