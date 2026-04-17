@@ -1,8 +1,7 @@
 import streamlit as st
-from modules import display_genai_advice, display_activity_summary, display_recent_workouts,require_user_selection
-from data_fetcher import get_genai_advice, get_user_posts_from_friends, get_users
+from modules import display_genai_advice, require_user_selection
+from data_fetcher import get_genai_advice, get_user_posts_from_friends
 from datetime import datetime
-
 
 
 def render_genai_section(user_id):
@@ -13,6 +12,7 @@ def render_genai_section(user_id):
     image = advice_data.get("image")
     display_genai_advice(timestamp, content, image)
 
+
 def format_date(timestamp):
     """Formats a timestamp to a readable date string."""
     if not timestamp:
@@ -21,6 +21,7 @@ def format_date(timestamp):
         return datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S").strftime("%B %d, %Y")
     except ValueError:
         return str(timestamp)[:10]
+
 
 def display_friend_post(post):
     """Displays a single friend post card."""
@@ -33,6 +34,7 @@ def display_friend_post(post):
             st.caption(format_date(post.get("timestamp")))
         st.write(post.get("content", ""))
 
+
 def display_friends_feed(user_id):
     """Fetches and displays the friends feed for a given user."""
     st.title("Friends Feed")
@@ -42,37 +44,28 @@ def display_friends_feed(user_id):
     else:
         for post in posts:
             display_friend_post(post)
+
+
 st.html("""
-    <style>
-        .block-container { padding-top: 0 !important; }
-        header[data-testid="stHeader"] { display: none !important; }
-        .hero-wrapper {
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: -1rem;
-            width: 100vw;
-            margin-bottom: 1.5rem;
-        }
-    </style>
-    <div class="hero-wrapper">
-        <div style="
-            background-color: #1a4fd6;
-            padding: 3rem 2rem;
-            text-align: center;
-        ">
-            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Community Page</h1>
-        </div>
-    </div>
+<style>
+    .block-container { padding-top: 1rem !important; }
+    .hero-banner {
+        background-color: #1a4fd6;
+        padding: 4rem 2rem 3rem 2rem;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+<div class="hero-banner">
+    <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Community Page</h1>
+</div>
 """)
 
 require_user_selection()
 
-
-if st.session_state.current_user:
-    render_genai_section(st.session_state.current_user)
-    display_friends_feed(st.session_state.current_user)
-else:
-    st.info("Select a user to get started.")
+render_genai_section(st.session_state.current_user)
+display_friends_feed(st.session_state.current_user)

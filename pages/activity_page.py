@@ -19,11 +19,11 @@ if 'current_user_workouts' not in st.session_state:
 def add_post(author_id, content, image_url):
     """Inserts a new post into BigQuery. Lines written by CHATGPT."""
     query = """
-    INSERT INTO `juan-gomez-fiu`.SWEpers.Posts 
+    INSERT INTO `juan-gomez-fiu`.SWEpers.Posts
     (PostId, AuthorId, Timestamp, ImageUrl, Content)
-    SELECT 
+    SELECT
       CONCAT(
-        'post', 
+        'post',
         CAST(IFNULL(MAX(CAST(SUBSTR(PostId, 5) AS INT64)), 0) + 1 AS STRING)
       ),
       @author_id,
@@ -47,29 +47,22 @@ def add_post(author_id, content, image_url):
 
 
 st.html("""
-    <style>
-        .block-container { padding-top: 0 !important; }
-        header[data-testid="stHeader"] { display: none !important; }
-        .hero-wrapper {
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: -1rem;
-            width: 100vw;
-            margin-bottom: 1.5rem;
-        }
-    </style>
-    <div class="hero-wrapper">
-        <div style="
-            background-color: #1a4fd6;
-            padding: 3rem 2rem;
-            text-align: center;
-        ">
-            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Activity Page</h1>
-        </div>
-    </div>
+<style>
+    .block-container { padding-top: 1rem !important; }
+    .hero-banner {
+        background-color: #1a4fd6;
+        padding: 4rem 2rem 3rem 2rem;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+<div class="hero-banner">
+    <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Activity Page</h1>
+</div>
 """)
 
 require_user_selection()

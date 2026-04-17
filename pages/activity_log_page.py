@@ -4,49 +4,38 @@ from modules import require_user_selection
 from datetime import datetime
 
 
-if "current_user_workouts_activity" not in st.session_state:
-    st.session_state.current_user_workouts = []
-
 def get_user_total_stats():
-    #sums up total calories, steps and distance stats from current_user_workouts
-
+    """Sums up total calories, steps and distance stats from current_user_workouts."""
     total_distance = 0.0
     total_calories = 0.0
     total_steps = 0
-    if st.session_state.get("current_user_workouts") :
-    
+    if st.session_state.get("current_user_workouts"):
         for workout in st.session_state.current_user_workouts:
             total_distance += workout.get('distance', 0)
             total_calories += workout.get('calories_burned', 0)
             total_steps += workout.get('steps', 0)
-
-    #rounds values to 2sf       
     return round(total_distance, 2), round(total_calories, 2), total_steps
 
+
 def format_user_stats(user_workout):
+    """Reformats workout entries with cleaner names and adds duration."""
     filtered_workouts = []
-    #from current usser worjouts reformats the entries in to more acceptable names and adds duration value
-   
     for workout_entry in user_workout:
-        #format start and end time for calcualtion
         start = datetime.strptime(workout_entry['start_timestamp'], '%Y-%m-%d %H:%M:%S')
         end = datetime.strptime(workout_entry['end_timestamp'], '%Y-%m-%d %H:%M:%S')
-
-        #Calculate duration in minutes
         duration_minutes = int((end - start).total_seconds() / 60)
-
         filtered_workouts.append({
-        'Date': workout_entry['start_timestamp'].split(' ')[0],
-        'Duration': duration_minutes,
-        'Distance': workout_entry['distance'],
-        'Steps': workout_entry['steps'],
-        'Calories': workout_entry['calories_burned'],
-         # Extracts only the YYYY-MM-DD
-    })
+            'Date': workout_entry['start_timestamp'].split(' ')[0],
+            'Duration': duration_minutes,
+            'Distance': workout_entry['distance'],
+            'Steps': workout_entry['steps'],
+            'Calories': workout_entry['calories_burned'],
+        })
     return filtered_workouts
 
+
 def render_table(workouts):
-    #styling for view buttons
+    """Renders a workout table with View buttons."""
     st.markdown("""
     <style>
         button[data-testid="stBaseButton-tertiary"] {
@@ -61,9 +50,8 @@ def render_table(workouts):
             background-color: #185FA5 !important;
         }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    #creae heade row
     col0, col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 2, 2])
     col0.markdown("**View**")
     col1.markdown("**Date**")
@@ -72,11 +60,10 @@ def render_table(workouts):
     col4.markdown("**Steps**")
     col5.markdown("**Calories**")
 
-    #for each workout in curret_user_workout cerate a new row,convert to string to ensure better formatting
     for workout in workouts:
         col0, col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 2, 2])
         with col0:
-            if st.button("View →",key=workout['Date'],type="tertiary"):
+            if st.button("View", key=workout['Date'], type="tertiary"):
                 st.session_state.selected_workout = workout
         col1.write(workout['Date'])
         col2.write(str(workout['Duration']))
@@ -85,40 +72,33 @@ def render_table(workouts):
         col5.write(str(workout['Calories']))
 
 
-st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
-
-
+# ---- Page layout ---- #
 
 st.html("""
-    <style>
-        .block-container { padding-top: 0 !important; }
-        header[data-testid="stHeader"] { display: none !important; }
-        .hero-wrapper {
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            margin-top: -1rem;
-            width: 100vw;
-            margin-bottom: 1.5rem;
-        }
-    </style>
-    <div class="hero-wrapper">
-        <div style="
-            background-color: #1a4fd6;
-            padding: 3rem 2rem;
-            text-align: center;
-        ">
-            <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0;">Activity Log</h1>
-            <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
-        </div>
-    </div>
+<style>
+    .block-container { padding-top: 1rem !important; }
+    .hero-banner {
+        background-color: #1a4fd6;
+        padding: 4rem 2rem 3rem 2rem;
+        margin-left: calc(-50vw + 50%);
+        margin-right: calc(-50vw + 50%);
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+<div class="hero-banner">
+    <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Activity Log</h1>
+    <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
+</div>
 """)
 
 require_user_selection()
+
 st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
-st.session_state.total_dist,st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
+st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
 
 
 
