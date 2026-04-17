@@ -5,33 +5,25 @@
 #############################################################################
 
 import streamlit as st
-from modules import display_post, display_genai_advice, display_activity_summary, require_user_selection
+from modules import display_post, display_genai_advice, display_activity_summary
 from data_fetcher import get_genai_advice, get_user_workouts, get_post
+from internals import create_component
 
 
 # ---- Hero Banner ---- #
-st.html("""
-<style>
-    .block-container { padding-top: 1rem !important; }
-    .hero-banner {
-        background-color: #1a4fd6;
-        padding: 4rem 2rem 3rem 2rem;
-        margin-left: calc(-50vw + 50%);
-        margin-right: calc(-50vw + 50%);
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-</style>
-<div class="hero-banner">
-    <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Welcome to SDS</h1>
-</div>
-""")
+create_component({
+    "HEADLINE": "Staying fit is hard.<br>With SWE-pers it is EASY.",
+    "POINT_1": "AI-powered coaching tailored to your workouts",
+    "POINT_2": "Track your distance, steps, and calories",
+    "POINT_3": "Stay motivated with friends on your feed",
+    "FOOTER_TEXT": "<- Select a user from the sidebar to get started.",
+}, "hero_banner", height=460)
 
-require_user_selection()
 
-user_id = st.session_state.current_user
+# ---- Dashboard (only if user selected) ---- #
+user_id = st.session_state.get("current_user")
+if not user_id:
+    st.stop()
 
 # ---- Personalized Advice ---- #
 st.subheader("Your Personalized Advice")
