@@ -60,11 +60,11 @@ st.markdown("""
 
 # ---- Pages & navigation (hidden auto-nav so we control sidebar order) ---- #
 home = st.Page("pages/home.py", title="Home", icon="🏠", default=True)
-activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")
+# activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")  # TODO: merge sharing into Activity Log or repurpose as detail view
 activity_log = st.Page("pages/activity_log_page.py", title="Activity Log", icon="📊")
 community = st.Page("pages/community_page.py", title="Community", icon="👥")
 
-pg = st.navigation([home, activity, activity_log, community], position="hidden")
+pg = st.navigation([home, activity_log, community], position="hidden")
 
 # ---- Sidebar: Branding → User Selector → Nav links ---- #
 with st.sidebar:
@@ -93,7 +93,7 @@ with st.sidebar:
     st.divider()
 
     st.page_link(home, label="Home", icon=":material/home:")
-    st.page_link(activity, label="Activity", icon=":material/directions_run:")
+    # st.page_link(activity, label="Activity", icon=":material/directions_run:")  # TODO
     st.page_link(activity_log, label="Activity Log", icon=":material/bar_chart:")
     st.page_link(community, label="Community", icon=":material/group:")
 

@@ -7,6 +7,7 @@
 # function other than the example.
 #############################################################################
 
+from datetime import datetime
 from internals import create_component
 import streamlit as st
 from data_fetcher import get_users
@@ -189,23 +190,25 @@ def display_recent_workouts(workouts_list):
 
 
 def display_genai_advice(timestamp, content, image):
-    """Displays a 'my custom component' which showcases an example of how custom
-    components work.
+    """Displays personalized GenAI fitness advice with an optional motivational image.
 
-    value: the name you'd like to be called by within the app
+    Args:
+        timestamp: When the advice was generated (displayed as a caption).
+        content: The AI-generated advice text.
+        image: URL of a motivational image, or None for a placeholder.
     """
-    # Define any templated data from your HTML file. The contents of
-    # 'value' will be inserted to the templated HTML file wherever '{{NAME}}'
-    # occurs. You can add as many variables as you want.
     if image is None or image == "No Image Known...":
         image = "https://placehold.co/600x400?text=Keep+Going!"
 
-    data = {"timestamp": timestamp, "content": content, "image": image}
+    # Format raw timestamp (e.g. "2026-04-20 14:21:16") to friendly form
+    try:
+        formatted_ts = datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S").strftime(
+            "%B %d, %Y at %I:%M %p"
+        )
+    except (ValueError, TypeError):
+        formatted_ts = str(timestamp)
 
-    # Base: image (400) + padding (48) + timestamp (25) + text
-    estimated_height = 600 + (len(content) // 4)
-
-    # Register and display the component by providing the data and name
-    # of the HTML file. HTML must be placed inside the "custom_components" folder.
-    html_file_name = "genai_advice"
-    create_component(data, html_file_name, height=estimated_height)
+    with st.container(border=True):
+        st.image(image, width="stretch")
+        st.caption(formatted_ts)
+        st.write(content)
