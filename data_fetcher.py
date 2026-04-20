@@ -22,6 +22,30 @@ vertexai.init(project=PROJECT_ID, location=LOCATION)
 gen_model = GenerativeModel("gemini-2.0-flash-001")
 
 
+# ---- Used by: leaderboard_page.py ---- #
+def get_user_total_stats():
+    """Returns a table that contains the sums of different metrics for all users"""
+    query = """SELECT 
+    u.UserId,
+    
+    SUM(w.TotalSteps) AS GrandTotalSteps,
+    SUM(w.TotalDistance) AS GrandTotalDistance,
+    SUM(w.CaloriesBurned) AS GrandTotalCalories
+    FROM 
+        `juan-gomez-fiu.SWEpers.Workouts` AS w
+    JOIN 
+        `juan-gomez-fiu.SWEpers.Users` AS u 
+        ON w.UserId = u.UserId
+    GROUP BY 
+        u.UserId
+    ORDER BY 
+        GrandTotalCalories DESC;"""
+    #conert reults to dict
+    results = _get_client().query(query).result()
+    results = [dict(row.items()) for row in results]
+    return results
+    
+
 # ---- Used by: community_page.py ---- #
 def get_user_posts_from_friends(user_id):
     """Returns the 10 most recent posts from a user's friends."""
