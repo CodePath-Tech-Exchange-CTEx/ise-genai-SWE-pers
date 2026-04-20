@@ -1,16 +1,7 @@
 import streamlit as st
-from modules import display_genai_advice, require_user_selection
-from data_fetcher import get_genai_advice, get_user_posts_from_friends
+from modules import display_post, require_user_selection
+from data_fetcher import get_latest_post, get_user_posts_from_friends
 from datetime import datetime
-
-
-def render_genai_section(user_id):
-    """Fetches and displays the GenAI advice component."""
-    advice_data = get_genai_advice(user_id=user_id)
-    timestamp = advice_data.get("timestamp", "No Date Known...")
-    content = advice_data.get("content", "No Content Known...")
-    image = advice_data.get("image")
-    display_genai_advice(timestamp, content, image)
 
 
 def format_date(timestamp):
@@ -67,5 +58,18 @@ st.html("""
 
 require_user_selection()
 
-render_genai_section(st.session_state.current_user)
+# ---- Latest Post ---- #
+st.subheader("Latest Post")
+with st.spinner("Loading latest post..."):
+    post_data = get_latest_post()
+display_post(
+    post_data["username"],
+    post_data["user_image"],
+    post_data["timestamp"],
+    post_data["content"],
+    post_data.get("image_url"),
+)
+
+st.divider()
+
 display_friends_feed(st.session_state.current_user)

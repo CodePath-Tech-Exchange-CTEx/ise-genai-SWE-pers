@@ -6,12 +6,11 @@
 
 import streamlit as st
 from modules import (
-    display_post,
     display_genai_advice,
     display_activity_summary,
     require_user_selection,
 )
-from data_fetcher import get_genai_advice, get_user_workouts, get_latest_post
+from data_fetcher import get_genai_advice, get_user_workouts
 from internals import create_component
 
 
@@ -30,22 +29,6 @@ create_component(
 # ---- Dashboard (only after user selection) ---- #
 require_user_selection()
 user_id = st.session_state.current_user
-
-st.divider()
-
-# ---- Latest Post (always visible, no login needed) ---- #
-st.subheader("Latest Post")
-with st.spinner("Loading latest post..."):
-    post_data = get_latest_post()
-display_post(
-    post_data["username"],
-    post_data["user_image"],
-    post_data["timestamp"],
-    post_data["content"],
-    post_data.get("image_url"),
-)
-
-st.divider()
 
 # ---- Advice + Activity Summary side by side ---- #
 col_advice, col_summary = st.columns(2)

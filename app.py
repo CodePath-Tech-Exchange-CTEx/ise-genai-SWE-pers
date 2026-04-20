@@ -68,13 +68,13 @@ pg = st.navigation([home, activity, activity_log, community], position="hidden")
 
 # ---- Sidebar: Branding → User Selector → Nav links ---- #
 with st.sidebar:
-    st.markdown("## 💪 SWE-pers")
+    st.header("💪 SWE-pers")
     st.divider()
 
     user_list = st.session_state.user_list
     current = st.session_state.get("current_user", "")
 
-    options = ["Select a User"] + user_list
+    options = ["Select a User"] + sorted(user_list)
     current_index = (user_list.index(current) + 1) if current in user_list else 0
 
     selected = st.selectbox(
@@ -92,9 +92,9 @@ with st.sidebar:
 
     st.divider()
 
-    st.page_link(home, label="Home", icon="🏠")
-    st.page_link(activity, label="Activity", icon="🏃")
-    st.page_link(activity_log, label="Activity Log", icon="📊")
-    st.page_link(community, label="Community", icon="👥")
+    st.page_link(home, label="Home", icon=":material/home:")
+    st.page_link(activity, label="Activity", icon=":material/directions_run:")
+    st.page_link(activity_log, label="Activity Log", icon=":material/bar_chart:")
+    st.page_link(community, label="Community", icon=":material/group:")
 
 pg.run()
