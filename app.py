@@ -26,6 +26,8 @@ if "user_list" not in st.session_state:
 st.markdown("""
 <style>
     [data-testid="stAppDeployButton"] { display: none; }
+    .block-container { padding-top: 4rem !important; }
+    .hero-banner, .hero-banner-log { min-height: 250px; }
     .github-header-btn {
         position: fixed;
         top: 1rem;
@@ -56,10 +58,17 @@ st.markdown("""
 </a>
 """, unsafe_allow_html=True)
 
-# ---- Sidebar: Branding → User Selector (appears ABOVE nav links) ---- #
+# ---- Pages & navigation (hidden auto-nav so we control sidebar order) ---- #
+home = st.Page("pages/home.py", title="Home", icon="🏠", default=True)
+activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")
+activity_log = st.Page("pages/activity_log_page.py", title="Activity Log", icon="📊")
+community = st.Page("pages/community_page.py", title="Community", icon="👥")
+
+pg = st.navigation([home, activity, activity_log, community], position="hidden")
+
+# ---- Sidebar: Branding → User Selector → Nav links ---- #
 with st.sidebar:
     st.markdown("## 💪 SWE-pers")
-    st.caption("Social Workout Experience")
     st.divider()
 
     user_list = st.session_state.user_list
@@ -83,11 +92,9 @@ with st.sidebar:
 
     st.divider()
 
-# ---- Navigation (renders nav links in sidebar below the content above) ---- #
-home = st.Page("pages/home.py", title="Home", icon="🏠", default=True)
-activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")
-activity_log = st.Page("pages/activity_log_page.py", title="Activity Log", icon="📊")
-community = st.Page("pages/community_page.py", title="Community", icon="👥")
+    st.page_link(home, label="Home", icon="🏠")
+    st.page_link(activity, label="Activity", icon="🏃")
+    st.page_link(activity_log, label="Activity Log", icon="📊")
+    st.page_link(community, label="Community", icon="👥")
 
-pg = st.navigation([home, activity, activity_log, community])
 pg.run()
