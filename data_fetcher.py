@@ -130,6 +130,39 @@ ORDER BY
     return workouts
 
 
+# ---- Used by: activity_log_page.py ---- #
+def add_workout(user_id, start_timestamp, end_timestamp, distance, steps, calories):
+    """Inserts a new workout into BigQuery."""
+    query = """
+    INSERT INTO `juan-gomez-fiu`.SWEpers.Workouts
+    (WorkoutId, UserId, StartTimestamp, EndTimestamp, TotalDistance, TotalSteps, CaloriesBurned)
+    VALUES (
+      GENERATE_UUID(),
+      @user_id,
+      @start_timestamp,
+      @end_timestamp,
+      @distance,
+      @steps,
+      @calories
+    )
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("start_timestamp", "DATETIME", start_timestamp),
+            bigquery.ScalarQueryParameter("end_timestamp", "DATETIME", end_timestamp),
+            bigquery.ScalarQueryParameter("distance", "FLOAT64", float(distance)),
+            bigquery.ScalarQueryParameter("steps", "INT64", int(steps)),
+            bigquery.ScalarQueryParameter("calories", "FLOAT64", float(calories)),
+        ]
+    )
+    try:
+        _get_client().query(query, job_config=job_config).result()
+    except Exception as e:
+        print(f"[add_workout] BigQuery Error: {e}")
+        raise e
+
+
 # ---- Used by: data_fetcher_test.py ---- #
 def get_user_sensor_data(user_id, workout_id):
     """Returns sensor data for a given workout."""
