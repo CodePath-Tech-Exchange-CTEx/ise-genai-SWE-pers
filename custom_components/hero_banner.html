@@ -1,0 +1,97 @@
+<!-- CSS -->
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .hero {
+    min-height: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 3rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #fafafa;
+    background: #0e1117;
+    overflow: hidden;
+  }
+
+  .hero-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 800px;
+    width: 100%;
+    gap: 2rem;
+  }
+
+  .hero-content {
+    flex: 1;
+  }
+
+  .hero-headline {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+  }
+
+  .hero-points {
+    list-style: none;
+    margin-bottom: 2rem;
+  }
+
+  .hero-points li {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: rgba(250, 250, 250, 0.7);
+  }
+
+  .hero-points li::before {
+    content: "\2014\00a0\00a0";
+    color: rgba(250, 250, 250, 0.4);
+  }
+
+  .hero-footer {
+    font-size: 1rem;
+    color: rgba(250, 250, 250, 0.5);
+  }
+
+  .hero-emoji {
+    font-size: 14rem;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+  }
+
+  .hero-emoji:hover {
+    animation: hover-float 3s ease-in-out infinite;
+  }
+
+  @keyframes hover-float {
+    0%   { transform: translate(0, 0); }
+    25%  { transform: translate(3px, -4px); }
+    50%  { transform: translate(-2px, 3px); }
+    75%  { transform: translate(2px, -2px); }
+    100% { transform: translate(0, 0); }
+  }
+</style>
+
+<!-- HTML -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <h1 class="hero-headline">{{HEADLINE}}</h1>
+      <ul class="hero-points">
+        <li>{{POINT_1}}</li>
+        <li>{{POINT_2}}</li>
+        <li>{{POINT_3}}</li>
+      </ul>
+      <p class="hero-footer">{{FOOTER_TEXT}}</p>
+    </div>
+    <span class="hero-emoji">🏃</span>
+  </div>
+</div>

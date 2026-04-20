@@ -107,20 +107,6 @@ def display_activity_summary(workouts_list):
         dist = w.get("distance", 0)
         steps = w.get("steps", 0)
         cal = w.get("calories_burned", 0)
-        start_coordinates = w.get("start_lat_lng", (0, 0))
-        end_coordinates = w.get("end_lat_lng", (0, 0))
-
-        # To format the coordinates and round them to two decimal places
-        start_coordinates = (
-            round(float(start_coordinates[0]), 2),
-            round(float(start_coordinates[1]), 2)
-        )
-
-        end_coordinates = (
-            round(float(end_coordinates[0]), 2),
-            round(float(end_coordinates[1]), 2)
-        )
-
 
         rows_html += f"""
         <tr>
@@ -129,21 +115,18 @@ def display_activity_summary(workouts_list):
             <td>{dist}</td>
             <td>{steps}</td>
             <td>{cal}</td>
-            <td>{start_coordinates}</td>
-            <td>{end_coordinates}</td>
         </tr>
         """
 
     if not rows_html:
         rows_html = """
         <tr>
-            <td colspan="7" style="text-align:center; opacity:0.8;">
+            <td colspan="5" style="text-align:center; color:#888;">
                 No workouts yet.
             </td>
         </tr>
         """
 
-    # ---- Templated data for the HTML component ---- #
     data = {
         "TOTAL_WORKOUTS": str(total_workouts),
         "TOTAL_DISTANCE": f"{total_distance:.2f}",
@@ -152,9 +135,10 @@ def display_activity_summary(workouts_list):
         "WORKOUT_ROWS": rows_html,
     }
 
-    # Name of the HTML file inside /custom_components (no .html extension)
-    html_file_name = "activity_summary"
-    create_component(data, html_file_name, height=900, scrolling=True)
+    # 200px base for cards + 40px per workout row
+    row_count = max(len(workouts_list), 1)
+    estimated_height = 220 + (row_count * 40)
+    create_component(data, "activity_summary", height=estimated_height, scrolling=True)
 
 
 def display_recent_workouts(workouts_list):
@@ -218,9 +202,7 @@ def display_genai_advice(timestamp, content, image):
 
     data = {"timestamp": timestamp, "content": content, "image": image}
 
-    # --- HEIGHT LOGIC ---
-    # Base height for image and timestamp is ~450px
-    # We add ~25px for every 100 characters of text content
+    # Base: image (400) + padding (48) + timestamp (25) + text
     estimated_height = 600 + (len(content) // 4)
 
     # Register and display the component by providing the data and name

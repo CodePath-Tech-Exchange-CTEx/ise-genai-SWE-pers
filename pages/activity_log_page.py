@@ -1,8 +1,15 @@
 import streamlit as st
-from data_fetcher import get_user_workouts
+from data_fetcher import get_user_workouts, add_workout
 from modules import require_user_selection
-from datetime import datetime
+from datetime import datetime, date, time
 
+
+# ---- Session state defaults ---- #
+if "show_log_form" not in st.session_state:
+    st.session_state.show_log_form = False
+
+
+# ---- Helper functions ---- #
 
 def get_user_total_stats():
     """Sums up total calories, steps and distance stats from current_user_workouts."""
@@ -72,70 +79,222 @@ def render_table(workouts):
         col5.write(str(workout['Calories']))
 
 
-# ---- Page layout ---- #
+# ---- Log Workout Form ---- #
 
-st.html("""
-<style>
-    .block-container { padding-top: 1rem !important; }
-    .hero-banner {
-        background-color: #1a4fd6;
-        padding: 4rem 2rem 3rem 2rem;
-        margin-left: calc(-50vw + 50%);
-        margin-right: calc(-50vw + 50%);
-        margin-bottom: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-</style>
-<div class="hero-banner">
-    <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Activity Log</h1>
-    <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
-</div>
-""")
+def show_log_workout_form():
+    """Renders the Log a Workout form view."""
 
-require_user_selection()
-
-st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
-st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
-
-
-
-st.markdown(f"### {len(st.session_state.current_user_workouts)} workouts recorded")
-
-total_cal,total_dist,total_steps = st.columns(3)
-
-total_cal.metric("Total Calories Burned",st.session_state.total_cal) 
-total_dist.metric("Total Distance",f"{st.session_state.total_dist}km")
-total_steps.metric("Total Steps",st.session_state.total_steps)
-
-st.divider()
-st.markdown(f"### Recent Workouts")
-
-
-st.markdown("""
+    # Hero banner matching the design
+    st.html("""
     <style>
-        button[data-testid="stBaseButton-primary"] {
+        .block-container { padding-top: 1rem !important; }
+        .hero-banner-log {
+            background: linear-gradient(rgba(26, 79, 214, 0.85), rgba(26, 79, 214, 0.85)),
+                         url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200');
+            background-size: cover;
+            background-position: center;
+            padding: 3rem 2rem 2.5rem 2rem;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .back-circle {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <div class="hero-banner-log">
+        <div class="back-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                 fill="none" stroke="#1a4fd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </div>
+        <h1 style="color: white !important; font-size: 2.2rem; font-weight: 700; margin: 0; line-height: 1;">
+            Log a workout
+        </h1>
+    </div>
+    """)
+
+    require_user_selection()
+
+    # Button styles: green Save, gray Cancel
+    st.markdown("""
+    <style>
+        button[data-testid="stBaseButton-primaryFormSubmit"] {
             background-color: #22c55e !important;
             color: white !important;
             border: none !important;
             border-radius: 20px !important;
         }
-        button[data-testid="stBaseButton-primary"]:hover {
+        button[data-testid="stBaseButton-primaryFormSubmit"]:hover {
             background-color: #16a34a !important;
         }
+        button[data-testid="stBaseButton-secondaryFormSubmit"] {
+            background-color: #6b7280 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+        }
+        button[data-testid="stBaseButton-secondaryFormSubmit"]:hover {
+            background-color: #4b5563 !important;
+        }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+    # Form inputs
+    with st.form("log_workout_form"):
+        st.markdown("**Date**")
+        workout_date = st.date_input(
+            "Date", value=date.today(), label_visibility="collapsed"
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Start time**")
+            start_time = st.time_input(
+                "Start time", value=time(7, 0), label_visibility="collapsed"
+            )
+        with col2:
+            st.markdown("**End time**")
+            end_time = st.time_input(
+                "End time", value=time(7, 45), label_visibility="collapsed"
+            )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Distance (km)**")
+            distance = st.number_input(
+                "Distance (km)", min_value=0.0, step=0.1,
+                format="%.1f", label_visibility="collapsed"
+            )
+        with col2:
+            st.markdown("**Calories**")
+            calories = st.number_input(
+                "Calories", min_value=0.0, step=1.0,
+                format="%.0f", label_visibility="collapsed"
+            )
+
+        st.markdown("**Steps**")
+        steps = st.number_input(
+            "Steps", min_value=0, step=1, label_visibility="collapsed"
+        )
+
+        # Action buttons
+        col1, col2, _ = st.columns([1, 1, 4])
+        with col1:
+            submitted = st.form_submit_button("Save Workout", type="primary")
+        with col2:
+            cancelled = st.form_submit_button("Cancel", type="secondary")
+
+    # Handle Save
+    if submitted:
+        start_dt = datetime.combine(workout_date, start_time)
+        end_dt = datetime.combine(workout_date, end_time)
+
+        if end_dt <= start_dt:
+            st.error("End time must be after start time.")
+            return
+
+        try:
+            add_workout(
+                user_id=st.session_state.current_user,
+                start_timestamp=start_dt,
+                end_timestamp=end_dt,
+                distance=distance,
+                steps=steps,
+                calories=calories,
+            )
+            # Clear cached workouts so the list refreshes
+            st.session_state.pop("current_user_workouts", None)
+            st.session_state.show_log_form = False
+            st.success("Workout saved successfully!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Failed to save workout: {e}")
+
+    # Handle Cancel
+    if cancelled:
+        st.session_state.show_log_form = False
+        st.rerun()
 
 
-if st.session_state.current_user_workouts:
-    render_table(format_user_stats(st.session_state.current_user_workouts))
+# ================================================================
+# Page layout — toggle between activity log list and log form
+# ================================================================
+
+if st.session_state.show_log_form:
+    show_log_workout_form()
 else:
-    st.info("No workouts found")
+    # ---- Activity Log list view (existing) ---- #
 
-st.divider()
+    st.html("""
+    <style>
+        .block-container { padding-top: 1rem !important; }
+        .hero-banner {
+            background-color: #1a4fd6;
+            padding: 4rem 2rem 3rem 2rem;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+    <div class="hero-banner">
+        <h1 style="color: white !important; font-size: 2.5rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">Activity Log</h1>
+        <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
+    </div>
+    """)
 
-if st.button("Log a workout", key="log_workout", type="primary"):
-    print("Logged a new workout")
+    require_user_selection()
 
+    st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
+    st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
+
+    st.markdown(f"### {len(st.session_state.current_user_workouts)} workouts recorded")
+
+    total_cal, total_dist, total_steps = st.columns(3)
+    total_cal.metric("Total Calories Burned", st.session_state.total_cal)
+    total_dist.metric("Total Distance", f"{st.session_state.total_dist}km")
+    total_steps.metric("Total Steps", st.session_state.total_steps)
+
+    st.divider()
+    st.markdown("### Recent Workouts")
+
+    st.markdown("""
+        <style>
+            button[data-testid="stBaseButton-primary"] {
+                background-color: #22c55e !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 20px !important;
+            }
+            button[data-testid="stBaseButton-primary"]:hover {
+                background-color: #16a34a !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    if st.session_state.current_user_workouts:
+        render_table(format_user_stats(st.session_state.current_user_workouts))
+    else:
+        st.info("No workouts found")
+
+    st.divider()
+
+    if st.button("Log a workout", key="log_workout", type="primary"):
+        st.session_state.show_log_form = True
+        st.rerun()
