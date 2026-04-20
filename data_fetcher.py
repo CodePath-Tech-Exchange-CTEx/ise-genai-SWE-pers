@@ -130,6 +130,39 @@ ORDER BY
     return workouts
 
 
+# ---- Used by: activity_log_page.py ---- #
+def add_workout(user_id, start_timestamp, end_timestamp, distance, steps, calories):
+    """Inserts a new workout into BigQuery."""
+    query = """
+    INSERT INTO `juan-gomez-fiu`.SWEpers.Workouts
+    (WorkoutId, UserId, StartTimestamp, EndTimestamp, TotalDistance, TotalSteps, CaloriesBurned)
+    VALUES (
+      GENERATE_UUID(),
+      @user_id,
+      @start_timestamp,
+      @end_timestamp,
+      @distance,
+      @steps,
+      @calories
+    )
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("start_timestamp", "DATETIME", start_timestamp),
+            bigquery.ScalarQueryParameter("end_timestamp", "DATETIME", end_timestamp),
+            bigquery.ScalarQueryParameter("distance", "FLOAT64", float(distance)),
+            bigquery.ScalarQueryParameter("steps", "INT64", int(steps)),
+            bigquery.ScalarQueryParameter("calories", "FLOAT64", float(calories)),
+        ]
+    )
+    try:
+        _get_client().query(query, job_config=job_config).result()
+    except Exception as e:
+        print(f"[add_workout] BigQuery Error: {e}")
+        raise e
+
+
 # ---- Used by: data_fetcher_test.py ---- #
 def get_user_sensor_data(user_id, workout_id):
     """Returns sensor data for a given workout."""
@@ -227,24 +260,32 @@ def get_post(user_id):
             "image_url": None,
         }
 
+
+# ---- Used by: pages/home.py ---- #
+def get_latest_post():
+    """Returns the most recent post from any user."""
+    query = """
+        SELECT p.PostId, p.AuthorId, p.Timestamp, p.ImageUrl, p.Content,
+               u.Username, u.ImageUrl AS UserImage
+        FROM `juan-gomez-fiu.SWEpers.Posts` p
+        JOIN `juan-gomez-fiu.SWEpers.Users` u ON p.AuthorId = u.UserId
+        ORDER BY p.Timestamp DESC
+        LIMIT 1
+    """
     try:
-        results = _get_client().query(query, job_config=job_config).result()
-        results2 = _get_client().query(query2, job_config=job_config).result()
-
-        row = next(results, None)
-        row2 = next(results2, None)
-        if row is None or row2 is None:
-            raise ValueError(f"No posts found for user {user_id}.")
-
+        results = _get_client().query(query).result()
+        row = next(iter(results), None)
+        if row is None:
+            raise ValueError("No posts found.")
         return {
-            "username": row2["Username"],
-            "user_image": row2["ImageUrl"] or "https://placehold.co/50x50",
+            "username": row["Username"],
+            "user_image": row["UserImage"] or "https://placehold.co/50x50",
             "timestamp": row["Timestamp"],
             "content": row["Content"],
             "image_url": row["ImageUrl"],
         }
     except Exception as e:
-        print(f"[get_post] Error: {e}")
+        print(f"[get_latest_post] Error: {e}")
         return {
             "username": "Unknown",
             "user_image": "https://placehold.co/50x50",
@@ -252,6 +293,7 @@ def get_post(user_id):
             "content": "No post available.",
             "image_url": None,
         }
+
 
 # ---- Used by: app.py ---- #
 def get_user_posts(user_id):
