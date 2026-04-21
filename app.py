@@ -64,8 +64,9 @@ home = st.Page("pages/home.py", title="Home", icon="🏠", default=True)
 # activity = st.Page("pages/activity_page.py", title="Activity", icon="🏃")  # TODO: merge sharing into Activity Log or repurpose as detail view
 activity_log = st.Page("pages/activity_log_page.py", title="Activity Log", icon="📊")
 community = st.Page("pages/community_page.py", title="Community", icon="👥")
+leaderboard = st.Page("pages/leaderboard_page.py", title="Leaderboard", icon="🏆")
 
-pg = st.navigation([home, activity_log, community], position="hidden")
+pg = st.navigation([home, activity_log, community,leaderboard], position="hidden")
 
 # ---- Sidebar: Branding → User Selector → Nav links ---- #
 with st.sidebar:
@@ -97,5 +98,6 @@ with st.sidebar:
     # st.page_link(activity, label="Activity", icon=":material/directions_run:")  # TODO
     st.page_link(activity_log, label="Activity Log", icon=":material/bar_chart:")
     st.page_link(community, label="Community", icon=":material/group:")
+    st.page_link(leaderboard, label="Leaderboard", icon=":material/trophy:")
 
 pg.run()
