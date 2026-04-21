@@ -1,5 +1,10 @@
 import streamlit as st
-from data_fetcher import get_user_workouts, add_workout
+from data_fetcher import (
+    add_workout,
+    get_genai_advice,
+    get_user_sensor_data,
+    get_user_workouts,
+)
 from modules import require_user_selection
 from datetime import datetime, date, time
 
@@ -7,6 +12,8 @@ from datetime import datetime, date, time
 # ---- Session state defaults ---- #
 if "show_log_form" not in st.session_state:
     st.session_state.show_log_form = False
+if "selected_workout_id" not in st.session_state:
+    st.session_state.selected_workout_id = None
 
 
 # ---- Helper functions ---- #
@@ -32,6 +39,9 @@ def format_user_stats(user_workout):
         end = datetime.strptime(workout_entry['end_timestamp'], '%Y-%m-%d %H:%M:%S')
         duration_minutes = int((end - start).total_seconds() / 60)
         filtered_workouts.append({
+            'WorkoutId': workout_entry['workout_id'],
+            'StartTimestamp': workout_entry['start_timestamp'],
+            'EndTimestamp': workout_entry['end_timestamp'],
             'Date': workout_entry['start_timestamp'].split(' ')[0],
             'Duration': duration_minutes,
             'Distance': workout_entry['distance'],
@@ -70,13 +80,106 @@ def render_table(workouts):
     for workout in workouts:
         col0, col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2, 2, 2])
         with col0:
-            if st.button("View", key=workout['Date'], type="tertiary"):
-                st.session_state.selected_workout = workout
+            if st.button("View →", key=f"view_{workout['WorkoutId']}", type="tertiary"):
+                st.session_state.selected_workout_id = workout['WorkoutId']
+                st.session_state.show_log_form = False
+                st.rerun()
         col1.write(workout['Date'])
-        col2.write(str(workout['Duration']))
-        col3.write(str(workout['Distance']))
+        col2.write(f"{workout['Duration']} min")
+        col3.write(f"{workout['Distance']} km")
         col4.write(str(workout['Steps']))
         col5.write(str(workout['Calories']))
+
+
+def get_workout_duration_minutes(workout):
+    """Returns the workout duration in whole minutes."""
+    start = datetime.strptime(workout['start_timestamp'], '%Y-%m-%d %H:%M:%S')
+    end = datetime.strptime(workout['end_timestamp'], '%Y-%m-%d %H:%M:%S')
+    return int((end - start).total_seconds() / 60)
+
+
+def get_selected_workout():
+    """Returns the selected workout from the current user's workout list."""
+    selected_id = st.session_state.get("selected_workout_id")
+    workouts = st.session_state.get("current_user_workouts", [])
+    return next((workout for workout in workouts if workout.get("workout_id") == selected_id), None)
+
+
+def get_heart_rate_points(sensor_data):
+    """Filters sensor rows down to heart-rate readings for charting."""
+    heart_rate_points = []
+    for sensor in sensor_data:
+        sensor_type = str(sensor.get("sensor_type", "")).lower()
+        if "heart" not in sensor_type:
+            continue
+        timestamp = sensor.get("timestamp")
+        label = timestamp.strftime("%H:%M") if hasattr(timestamp, "strftime") else str(timestamp)
+        heart_rate_points.append({
+            "Time": label,
+            "Heart Rate": sensor.get("data"),
+        })
+    return heart_rate_points
+
+
+def render_workout_detail(workout):
+    """Renders the selected workout detail view."""
+    duration_minutes = get_workout_duration_minutes(workout)
+    workout_date = workout['start_timestamp'].split(' ')[0]
+
+    st.html("""
+    <style>
+        .block-container { padding-top: 1rem !important; }
+        .detail-hero {
+            background-color: #1a4fd6;
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .detail-subtitle {
+            color: rgba(255,255,255,0.84);
+            font-size: 1rem;
+            margin: 0.5rem 0 0;
+        }
+    </style>
+    """)
+
+    if st.button("←", key="back_to_activity_log", help="Back to Activity Log"):
+        st.session_state.selected_workout_id = None
+        st.rerun()
+
+    st.html(f"""
+    <div class="detail-hero">
+        <h1 style="color: white !important; font-size: 2.25rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">
+            {workout_date}
+        </h1>
+        <p class="detail-subtitle">{duration_minutes} minute workout</p>
+    </div>
+    """)
+
+    calories, distance, steps = st.columns(3)
+    calories.metric("Calories", workout.get("calories_burned", 0))
+    distance.metric("Distance", f"{workout.get('distance', 0)} km")
+    steps.metric("Steps", workout.get("steps", 0))
+
+    sensor_data = get_user_sensor_data(
+        st.session_state.current_user,
+        workout["workout_id"],
+    )
+    heart_rate_points = get_heart_rate_points(sensor_data)
+    if heart_rate_points:
+        st.divider()
+        st.markdown("### Heart Rate")
+        st.bar_chart(heart_rate_points, x="Time", y="Heart Rate")
+
+    st.divider()
+    st.markdown("### AI Tip")
+    advice = get_genai_advice(st.session_state.current_user, workout["workout_id"])
+    st.info(advice.get("content", "Keep moving consistently and listen to your body."))
 
 
 # ---- Log Workout Form ---- #
@@ -236,6 +339,17 @@ def show_log_workout_form():
 if st.session_state.show_log_form:
     show_log_workout_form()
 else:
+    require_user_selection()
+    st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
+
+    selected_workout = get_selected_workout()
+    if st.session_state.selected_workout_id and selected_workout:
+        render_workout_detail(selected_workout)
+        st.stop()
+
+    if st.session_state.selected_workout_id and not selected_workout:
+        st.session_state.selected_workout_id = None
+
     # ---- Activity Log list view (existing) ---- #
 
     st.html("""
@@ -258,10 +372,6 @@ else:
         <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
     </div>
     """)
-
-    require_user_selection()
-
-    st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
     st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
 
     st.markdown(f"### {len(st.session_state.current_user_workouts)} workouts recorded")

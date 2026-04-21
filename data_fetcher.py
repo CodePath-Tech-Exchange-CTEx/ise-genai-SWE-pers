@@ -364,14 +364,20 @@ def get_user_posts(user_id):
 
 
 # ---- Used by: app.py, community_page.py ---- #
-def get_genai_advice(user_id):
+def get_genai_advice(user_id, workout_id=None):
     """Returns personalised fitness advice from Gemini based on user workout data."""
     workouts = get_user_workouts(user_id)
     sensor_summary = ""
 
     if workouts:
-        latest = workouts[0]
-        sensor_data = get_user_sensor_data(user_id, latest["workout_id"])
+        selected_workout = next(
+            (workout for workout in workouts if workout.get("workout_id") == workout_id),
+            None,
+        )
+        advice_workouts = [selected_workout] if selected_workout else workouts
+        sensor_workout = selected_workout or workouts[0]
+
+        sensor_data = get_user_sensor_data(user_id, sensor_workout["workout_id"])
         if sensor_data:
             sensor_summary = "\n".join(
                 f"  - {s['sensor_type']}: {s['data']:.1f} at {s['timestamp']}"
@@ -380,7 +386,7 @@ def get_genai_advice(user_id):
         workout_summary = "\n".join(
             f"  - {w['distance']} km, {w['steps']} steps, "
             f"{w['calories_burned']} cal ({w['start_timestamp']} to {w['end_timestamp']})"
-            for w in workouts
+            for w in advice_workouts
         )
     else:
         workout_summary = "  No workouts recorded yet."
