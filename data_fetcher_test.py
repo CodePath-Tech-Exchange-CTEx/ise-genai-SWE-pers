@@ -169,20 +169,25 @@ class TestGetUsers(unittest.TestCase):
     """Tests for get_users"""
 
     @patch("data_fetcher.bigquery.Client")
-    def test_returns_list_of_user_ids(self, MockClient):
-        """Returns a list of user ID strings."""
+    def test_returns_list_of_user_dicts(self, MockClient):
+        """Returns a list of dicts with user_id and name."""
         mock_client = MockClient.return_value
         mock_job = MagicMock()
         mock_row1 = MagicMock()
         mock_row1.UserId = "user1"
+        mock_row1.Name = "Alice Johnson"
         mock_row2 = MagicMock()
         mock_row2.UserId = "user2"
+        mock_row2.Name = "Bob Smith"
         mock_job.result.return_value = [mock_row1, mock_row2]
         mock_client.query.return_value = mock_job
 
         from data_fetcher import get_users
         result = get_users()
-        self.assertEqual(result, ["user1", "user2"])
+        self.assertEqual(result, [
+            {"user_id": "user1", "name": "Alice Johnson"},
+            {"user_id": "user2", "name": "Bob Smith"},
+        ])
 
     @patch("data_fetcher.bigquery.Client")
     def test_returns_empty_list_when_no_users(self, MockClient):

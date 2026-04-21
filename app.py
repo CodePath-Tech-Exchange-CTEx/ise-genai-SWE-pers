@@ -20,7 +20,9 @@ from modules import display_post, display_activity_summary, display_genai_advice
 # ---- Session state defaults ---- #
 if "current_user" not in st.session_state:
     st.session_state.current_user = ""
-if "user_list" not in st.session_state:
+if "user_list" not in st.session_state or (
+    st.session_state.user_list and isinstance(st.session_state.user_list[0], str)
+):
     st.session_state.user_list = get_users()
 
 # Replace Deploy button with GitHub link styled to match the 3-dot menu button
@@ -76,21 +78,29 @@ with st.sidebar:
     user_list = st.session_state.user_list
     current = st.session_state.get("current_user", "")
 
-    options = ["Select a User"] + sorted(user_list)
-    current_index = (user_list.index(current) + 1) if current in user_list else 0
+    # Build name→user_id mapping for the dropdown
+    name_to_id = {u["name"]: u["user_id"] for u in user_list}
+    id_to_name = {u["user_id"]: u["name"] for u in user_list}
+    display_names = sorted(name_to_id.keys())
+
+    options = ["Select a User"] + display_names
+    current_name = id_to_name.get(current, "")
+    current_index = (display_names.index(current_name) + 1) if current_name in display_names else 0
 
     selected = st.selectbox(
         "Active User", options, index=current_index, key="sidebar_user_selector"
     )
 
-    if selected != "Select a User" and selected != current:
-        st.session_state.current_user = selected
-        # Clear cached workout data when user changes
-        st.session_state.pop("current_user_workouts", None)
-        st.rerun()
+    if selected != "Select a User":
+        selected_id = name_to_id[selected]
+        if selected_id != current:
+            st.session_state.current_user = selected_id
+            # Clear cached workout data when user changes
+            st.session_state.pop("current_user_workouts", None)
+            st.rerun()
 
     if current:
-        st.success(f"Logged in as **{current}**")
+        st.success(f"Logged in as **{id_to_name.get(current, current)}**")
 
     st.divider()
 

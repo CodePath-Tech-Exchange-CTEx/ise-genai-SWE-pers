@@ -86,11 +86,11 @@ def get_user_posts_from_friends(user_id):
 
 # ---- Used by: activity_page.py, community_page.py ---- #
 def get_users():
-    """Returns a list of all user IDs."""
+    """Returns a list of dicts with user_id and name for every user."""
     try:
-        query = "SELECT UserId FROM `juan-gomez-fiu`.SWEpers.Users"
+        query = "SELECT UserId, Name FROM `juan-gomez-fiu`.SWEpers.Users"
         results = _get_client().query(query).result()
-        return [row.UserId for row in results]
+        return [{"user_id": row.UserId, "name": row.Name} for row in results]
     except Exception as e:
         print(f"[get_users] Error: {e}")
         return []
