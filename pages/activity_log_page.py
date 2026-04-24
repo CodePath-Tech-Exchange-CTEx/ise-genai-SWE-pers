@@ -25,9 +25,9 @@ def get_user_total_stats():
     total_steps = 0
     if st.session_state.get("current_user_workouts"):
         for workout in st.session_state.current_user_workouts:
-            total_distance += workout.get('distance', 0)
-            total_calories += workout.get('calories_burned', 0)
-            total_steps += workout.get('steps', 0)
+            total_distance += workout.get('distance') or 0
+            total_calories += workout.get('calories_burned') or 0
+            total_steps += workout.get('steps') or 0
     return round(total_distance, 2), round(total_calories, 2), total_steps
 
 
@@ -102,7 +102,7 @@ def get_selected_workout():
     """Returns the selected workout from the current user's workout list."""
     selected_id = st.session_state.get("selected_workout_id")
     workouts = st.session_state.get("current_user_workouts", [])
-    return next((workout for workout in workouts if workout.get("workout_id") == selected_id), None)
+    return next((w for w in workouts if w.get("workout_id") == selected_id), None)
 
 
 def get_heart_rate_points(sensor_data):
@@ -148,10 +148,6 @@ def render_workout_detail(workout):
     </style>
     """)
 
-    if st.button("←", key="back_to_activity_log", help="Back to Activity Log"):
-        st.session_state.selected_workout_id = None
-        st.rerun()
-
     st.html(f"""
     <div class="detail-hero">
         <h1 style="color: white !important; font-size: 2.25rem; font-weight: 700; margin: 0; padding: 0; line-height: 1;">
@@ -181,13 +177,31 @@ def render_workout_detail(workout):
     advice = get_genai_advice(st.session_state.current_user, workout["workout_id"])
     st.info(advice.get("content", "Keep moving consistently and listen to your body."))
 
+    st.divider()
+
+    st.markdown("""
+        <style>
+            button[data-testid="stBaseButton-secondary"] {
+                background-color: #2563a8 !important;
+                color: white !important;
+                border: none !important;
+                border-radius: 20px !important;
+                padding: 0.4rem 1rem !important;
+            }
+            button[data-testid="stBaseButton-secondary"]:hover {
+                background-color: #185FA5 !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    if st.button("← Back to Activity Log", key="back_to_activity_log"):
+        st.session_state.selected_workout_id = None
+        st.rerun()
 
 # ---- Log Workout Form ---- #
 
 def show_log_workout_form():
     """Renders the Log a Workout form view."""
-
-    # Hero banner matching the design
     st.html("""
     <style>
         .block-container { padding-top: 1rem !important; }
@@ -206,23 +220,8 @@ def show_log_workout_form():
             justify-content: center;
             gap: 0.5rem;
         }
-        .back-circle {
-            width: 44px;
-            height: 44px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
     </style>
     <div class="hero-banner-log">
-        <div class="back-circle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                 fill="none" stroke="#1a4fd6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-        </div>
         <h1 style="color: white !important; font-size: 2.2rem; font-weight: 700; margin: 0; line-height: 1;">
             Log a workout
         </h1>
@@ -231,7 +230,6 @@ def show_log_workout_form():
 
     require_user_selection()
 
-    # Button styles: green Save, gray Cancel
     st.markdown("""
     <style>
         button[data-testid="stBaseButton-primaryFormSubmit"] {
@@ -255,60 +253,41 @@ def show_log_workout_form():
     </style>
     """, unsafe_allow_html=True)
 
-    # Form inputs
     with st.form("log_workout_form"):
         st.markdown("**Date**")
-        workout_date = st.date_input(
-            "Date", value=date.today(), label_visibility="collapsed"
-        )
+        workout_date = st.date_input("Date", value=date.today(), label_visibility="collapsed")
 
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("**Start time**")
-            start_time = st.time_input(
-                "Start time", value=time(7, 0), label_visibility="collapsed"
-            )
+            start_time = st.time_input("Start time", value=time(7, 0), label_visibility="collapsed")
         with col2:
             st.markdown("**End time**")
-            end_time = st.time_input(
-                "End time", value=time(7, 45), label_visibility="collapsed"
-            )
+            end_time = st.time_input("End time", value=time(7, 45), label_visibility="collapsed")
 
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("**Distance (km)**")
-            distance = st.number_input(
-                "Distance (km)", min_value=0.0, step=0.1,
-                format="%.1f", label_visibility="collapsed"
-            )
+            distance = st.number_input("Distance (km)", min_value=0.0, step=0.1, format="%.1f", label_visibility="collapsed")
         with col2:
             st.markdown("**Calories**")
-            calories = st.number_input(
-                "Calories", min_value=0.0, step=1.0,
-                format="%.0f", label_visibility="collapsed"
-            )
+            calories = st.number_input("Calories", min_value=0.0, step=1.0, format="%.0f", label_visibility="collapsed")
 
         st.markdown("**Steps**")
-        steps = st.number_input(
-            "Steps", min_value=0, step=1, label_visibility="collapsed"
-        )
+        steps = st.number_input("Steps", min_value=0, step=1, label_visibility="collapsed")
 
-        # Action buttons
         col1, col2, _ = st.columns([1, 1, 4])
         with col1:
             submitted = st.form_submit_button("Save Workout", type="primary")
         with col2:
             cancelled = st.form_submit_button("Cancel", type="secondary")
 
-    # Handle Save
     if submitted:
         start_dt = datetime.combine(workout_date, start_time)
         end_dt = datetime.combine(workout_date, end_time)
-
         if end_dt <= start_dt:
             st.error("End time must be after start time.")
             return
-
         try:
             add_workout(
                 user_id=st.session_state.current_user,
@@ -318,7 +297,6 @@ def show_log_workout_form():
                 steps=steps,
                 calories=calories,
             )
-            # Clear cached workouts so the list refreshes
             st.session_state.pop("current_user_workouts", None)
             st.session_state.show_log_form = False
             st.success("Workout saved successfully!")
@@ -326,18 +304,18 @@ def show_log_workout_form():
         except Exception as e:
             st.error(f"Failed to save workout: {e}")
 
-    # Handle Cancel
     if cancelled:
         st.session_state.show_log_form = False
         st.rerun()
 
 
 # ================================================================
-# Page layout — toggle between activity log list and log form
+# Page routing
 # ================================================================
 
 if st.session_state.show_log_form:
     show_log_workout_form()
+
 else:
     require_user_selection()
     st.session_state.current_user_workouts = get_user_workouts(st.session_state.current_user)
@@ -350,8 +328,7 @@ else:
     if st.session_state.selected_workout_id and not selected_workout:
         st.session_state.selected_workout_id = None
 
-    # ---- Activity Log list view (existing) ---- #
-
+    # ---- Activity Log list view ---- #
     st.html("""
     <style>
         .block-container { padding-top: 1rem !important; }
@@ -372,6 +349,7 @@ else:
         <p style="color: rgba(255,255,255,0.8); font-size: 1rem; margin: 0.5rem 0 0;">All workouts completed to date</p>
     </div>
     """)
+
     st.session_state.total_dist, st.session_state.total_cal, st.session_state.total_steps = get_user_total_stats()
 
     st.markdown(f"### {len(st.session_state.current_user_workouts)} workouts recorded")
