@@ -120,7 +120,7 @@ def display_leaderboard_view(challenge, user_id, leaderboard_data):
         rank = i + 1
         metric_val = entry[key]
         bg_row = "background:rgba(37,99,168,0.3);" if is_you else ""
-        label = "You" if is_you else entry["UserId"]
+        label = "You" if is_you else entry.get("Name", entry["UserId"])
         st.markdown(f"""
             <div style="
                 display:flex; align-items:center;

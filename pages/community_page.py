@@ -1,29 +1,45 @@
 import streamlit as st
-from modules import display_post, require_user_selection
-from data_fetcher import get_latest_post, get_user_posts_from_friends
+from modules import require_user_selection
+from data_fetcher import get_user_posts_from_friends, add_post, get_exercise_image
 from datetime import datetime
 
 
 def format_date(timestamp):
-    """Formats a timestamp to a readable date string."""
+    """Formats a timestamp to mm/dd/yyyy."""
     if not timestamp:
         return ""
     try:
-        return datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S").strftime("%B %d, %Y")
+        return datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S.%f").strftime("%m/%d/%Y")
     except ValueError:
-        return str(timestamp)[:10]
+        try:
+            return datetime.strptime(str(timestamp), "%Y-%m-%d %H:%M:%S").strftime("%m/%d/%Y")
+        except ValueError:
+            return str(timestamp)[:10]
 
 
 def display_friend_post(post):
     """Displays a single friend post card."""
+    username = post.get("username", post.get("author_id", "Unknown"))
+    name = post.get("name", "")
+    user_image = post.get("user_image", "https://placehold.co/50x50")
+    post_image = post.get("image_url")
+
     with st.container(border=True):
-        col1, col2 = st.columns([1, 9])
-        with col1:
-            st.image("https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&s=50", width=50)
-        with col2:
-            st.markdown(f"**{post.get('username', post.get('author_id', 'Unknown'))}**")
-            st.caption(format_date(post.get("timestamp")))
-        st.write(post.get("content", ""))
+        left, right = st.columns([3, 1])
+        with left:
+            col1, col2 = st.columns([1, 11])
+            with col1:
+                st.image(user_image, width=50)
+            with col2:
+                if name:
+                    st.markdown(f"**{name}** · @{username}")
+                else:
+                    st.markdown(f"**@{username}**")
+                st.caption(format_date(post.get("timestamp")))
+            st.write(post.get("content", ""))
+        with right:
+            if post_image and post_image != "None":
+                st.image(post_image, use_container_width=True)
 
 
 def display_friends_feed(user_id):
@@ -58,17 +74,25 @@ st.html("""
 
 require_user_selection()
 
-# ---- Latest Post ---- #
-st.subheader("Latest Post")
-with st.spinner("Loading latest post..."):
-    post_data = get_latest_post()
-display_post(
-    post_data["username"],
-    post_data["user_image"],
-    post_data["timestamp"],
-    post_data["content"],
-    post_data.get("image_url"),
-)
+# ---- Create Post ---- #
+st.subheader("Create Post")
+with st.form("create_post_form", clear_on_submit=True):
+    post_content = st.text_area(
+        "What's on your mind?",
+        placeholder="Share your workout, progress, or just say hi...",
+        max_chars=500,
+    )
+    submitted = st.form_submit_button("Post", type="primary", use_container_width=True)
+
+    if submitted:
+        if not post_content.strip():
+            st.warning("Post can't be empty.")
+        else:
+            with st.spinner("Posting..."):
+                image_url = get_exercise_image(post_content)
+                add_post(st.session_state.current_user, post_content.strip(), image_url)
+            st.success("Posted!")
+            st.rerun()
 
 st.divider()
 

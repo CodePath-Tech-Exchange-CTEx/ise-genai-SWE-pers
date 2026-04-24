@@ -5,5 +5,8 @@ enableCORS = false
 enableXsrfProtection = false
 runOnSave = true
 
+[client]
+showSidebarNavigation = false
+
 [browser]
 gatherUsageStats = false

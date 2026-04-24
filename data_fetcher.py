@@ -25,20 +25,21 @@ gen_model = GenerativeModel("gemini-2.0-flash-001")
 # ---- Used by: leaderboard_page.py ---- #
 def get_user_total_stats():
     """Returns a table that contains the sums of different metrics for all users"""
-    query = """SELECT 
+    query = """SELECT
     u.UserId,
-    
+    u.Name,
+
     SUM(w.TotalSteps) AS GrandTotalSteps,
     SUM(w.TotalDistance) AS GrandTotalDistance,
     SUM(w.CaloriesBurned) AS GrandTotalCalories
-    FROM 
+    FROM
         `juan-gomez-fiu.SWEpers.Workouts` AS w
-    JOIN 
-        `juan-gomez-fiu.SWEpers.Users` AS u 
+    JOIN
+        `juan-gomez-fiu.SWEpers.Users` AS u
         ON w.UserId = u.UserId
-    GROUP BY 
-        u.UserId
-    ORDER BY 
+    GROUP BY
+        u.UserId, u.Name
+    ORDER BY
         GrandTotalCalories DESC;"""
     #conert reults to dict
     results = _get_client().query(query).result()
@@ -50,8 +51,8 @@ def get_user_total_stats():
 def get_user_posts_from_friends(user_id):
     """Returns the 10 most recent posts from a user's friends."""
     query = """
-        SELECT p.PostId, p.AuthorId, p.Timestamp, p.Content,
-               u.Username
+        SELECT p.PostId, p.AuthorId, p.Timestamp, p.Content, p.ImageUrl,
+               u.Username, u.Name, u.ImageUrl AS UserImage
         FROM `juan-gomez-fiu.SWEpers.Posts` p
         JOIN `juan-gomez-fiu.SWEpers.Friends` f
             ON (p.AuthorId = f.UserId2 AND f.UserId1 = @user_id)
@@ -75,8 +76,11 @@ def get_user_posts_from_friends(user_id):
                 "post_id": row_dict.get("PostId", ""),
                 "author_id": row_dict.get("AuthorId", ""),
                 "username": row_dict.get("Username", "Unknown"),
+                "name": row_dict.get("Name", ""),
+                "user_image": row_dict.get("UserImage") or "https://placehold.co/50x50",
                 "timestamp": str(row_dict.get("Timestamp", "")),
                 "content": row_dict.get("Content", ""),
+                "image_url": row_dict.get("ImageUrl"),
             })
         return posts
     except Exception as e:
@@ -317,6 +321,37 @@ def get_latest_post():
             "content": "No post available.",
             "image_url": None,
         }
+
+
+# ---- Used by: pages/activity_page.py, pages/community_page.py ---- #
+def add_post(author_id, content, image_url=None):
+    """Inserts a new post into BigQuery."""
+    query = """
+    INSERT INTO `juan-gomez-fiu`.SWEpers.Posts
+    (PostId, AuthorId, Timestamp, ImageUrl, Content)
+    SELECT
+      CONCAT(
+        'post',
+        CAST(IFNULL(MAX(CAST(SUBSTR(PostId, 5) AS INT64)), 0) + 1 AS STRING)
+      ),
+      @author_id,
+      CURRENT_DATETIME(),
+      @image_url,
+      @content
+    FROM `juan-gomez-fiu`.SWEpers.Posts
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("author_id", "STRING", author_id),
+            bigquery.ScalarQueryParameter("image_url", "STRING", image_url or ""),
+            bigquery.ScalarQueryParameter("content", "STRING", content),
+        ]
+    )
+    try:
+        _get_client().query(query, job_config=job_config).result()
+    except Exception as e:
+        print("BIGQUERY ERROR:", e)
+        raise e
 
 
 # ---- Used by: app.py ---- #

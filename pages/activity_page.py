@@ -1,49 +1,10 @@
 import streamlit as st
-import os
-from dotenv import load_dotenv
-from google.cloud import bigquery
-from data_fetcher import get_users, get_user_workouts, get_exercise_image, _get_client
+from data_fetcher import get_user_workouts, get_exercise_image, add_post
 from modules import require_user_selection
-
-
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
-
-ACCESS_KEY = os.environ.get("ACCESS_KEY")
-
 
 
 if 'current_user_workouts' not in st.session_state:
     st.session_state.current_user_workouts = []
-
-
-def add_post(author_id, content, image_url):
-    """Inserts a new post into BigQuery. Lines written by CHATGPT."""
-    query = """
-    INSERT INTO `juan-gomez-fiu`.SWEpers.Posts
-    (PostId, AuthorId, Timestamp, ImageUrl, Content)
-    SELECT
-      CONCAT(
-        'post',
-        CAST(IFNULL(MAX(CAST(SUBSTR(PostId, 5) AS INT64)), 0) + 1 AS STRING)
-      ),
-      @author_id,
-      CURRENT_DATETIME(),
-      @image_url,
-      @content
-    FROM `juan-gomez-fiu`.SWEpers.Posts
-    """
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("author_id", "STRING", author_id),
-            bigquery.ScalarQueryParameter("image_url", "STRING", image_url or ""),
-            bigquery.ScalarQueryParameter("content", "STRING", content),
-        ]
-    )
-    try:
-        _get_client().query(query, job_config=job_config).result()
-    except Exception as e:
-        print("BIGQUERY ERROR:", e)
-        raise e
 
 
 st.html("""

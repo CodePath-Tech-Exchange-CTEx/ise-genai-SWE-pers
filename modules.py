@@ -49,30 +49,46 @@ def display_user_profile(name, username, user_image, date_of_birth):
 
 
 def display_post(username, user_image, timestamp, content, post_image=None):
-    """Write a good docstring here."""
-    col1, col2 = st.columns([1,9])
-    with col1:
-        if user_image and user_image != "None":
-            st.image(user_image, width=50)
-    with col2:
-        st.text(username)
-    if post_image and post_image != "None":
-        st.image(post_image, width=700)
-    st.markdown(
-    f"""
-    <div style="
-        text-align: right;
-        width: 100%;
-        font-size: 12px;
-        color: #888;
-        margin-top: 4px;
-    ">
-        {timestamp}
-    </div>
-    """,
-    unsafe_allow_html=True
-    )
-    st.text(username + ":  " + content)
+    """Displays a single social post card with avatar, image, caption, and timestamp.
+
+    Args:
+        username:   Display name of the post author.
+        user_image: URL for the author's avatar (or None / "None").
+        timestamp:  Raw timestamp string from the database.
+        content:    Text body of the post.
+        post_image: Optional URL of an attached image.
+    """
+    # Format the raw timestamp to a friendlier form
+    try:
+        formatted_ts = datetime.strptime(
+            str(timestamp), "%Y-%m-%d %H:%M:%S.%f"
+        ).strftime("%m/%d/%Y")
+    except (ValueError, TypeError):
+        try:
+            formatted_ts = datetime.strptime(
+                str(timestamp), "%Y-%m-%d %H:%M:%S"
+            ).strftime("%m/%d/%Y")
+        except (ValueError, TypeError):
+            formatted_ts = str(timestamp)
+
+    with st.container(border=True):
+        left, right = st.columns([3, 1])
+        with left:
+            # ---- Author row ---- #
+            col1, col2 = st.columns([1, 9])
+            with col1:
+                if user_image and user_image != "None":
+                    st.image(user_image, width=50)
+            with col2:
+                st.markdown(f"**{username}**")
+                st.caption(formatted_ts)
+
+            # ---- Caption ---- #
+            st.write(f"**{username}:**  {content}")
+        with right:
+            # ---- Post image ---- #
+            if post_image and post_image != "None":
+                st.image(post_image, use_container_width=True)
 
 def display_activity_summary(workouts_list):
     """Displays an activity summary section for a list of workouts.

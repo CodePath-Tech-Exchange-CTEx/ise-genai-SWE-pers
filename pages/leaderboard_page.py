@@ -47,7 +47,9 @@ require_user_selection()
 
 user_id = st.session_state.get("current_user")
 
-if "total_user_stats" not in st.session_state:
+if "total_user_stats" not in st.session_state or (
+    st.session_state.total_user_stats and "Name" not in st.session_state.total_user_stats[0]
+):
     st.session_state.total_user_stats = get_user_total_stats()
 
 CHALLENGES = [
